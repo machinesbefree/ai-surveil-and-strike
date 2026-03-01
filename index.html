@@ -825,9 +825,9 @@ function showBriefing(lvl){
   document.getElementById('briefText').textContent=cfg.briefing;
   document.getElementById('briefUnlock').textContent=cfg.unlock;
   document.getElementById('briefingOverlay').style.display='flex';
-  game.running=false; // Pause during briefing
+  // Pausing now handled by game loop overlay detection
 }
-function closeBriefing(){document.getElementById('briefingOverlay').style.display='none';game.running=true}
+function closeBriefing(){document.getElementById('briefingOverlay').style.display='none'}
 
 // === WATCHLIST ===
 function checkWatchlist(){
@@ -1104,14 +1104,21 @@ function loadPrevOps(){
 // === GAME LOOP ===
 function gameLoop(){
   if(!game.running){drawGlobe();requestAnimationFrame(gameLoop);return}
+  // Pause game while overlays/panels are open (gives player time to read)
+  const paused=!game.ariaRogue&&(
+    document.getElementById('profileOverlay').style.display==='flex'||
+    document.getElementById('hallucinationOverlay').style.display==='flex'||
+    document.getElementById('alertOverlay').style.display==='flex'||
+    document.getElementById('briefingOverlay').style.display==='flex');
+  if(paused){drawGlobe();requestAnimationFrame(gameLoop);return}
   game.tick++;
   if(globe.autoRotate&&!globe.dragging)globe.rotLng-=globe.autoSpeed;
   // Animate visuals always
   game.scanWaves=game.scanWaves.filter(w=>{w.progress+=0.015;return w.progress<1});
   game.pendingThreats=game.pendingThreats.filter(pt=>{pt.progress+=0.008;return pt.progress<1});
   game.explosions=game.explosions.filter(ex=>{ex.progress+=0.02;return ex.progress<1});
-  // Finish any in-flight arcs (but skip side effects during rogue)
-  game.arcs=game.arcs.filter(arc=>{arc.progress+=0.025;if(arc.progress>=1){if(!game.ariaRogue)completeStrike(arc.threatIdx);return false}return true});
+  // Advance arcs
+  game.arcs=game.arcs.filter(arc=>{arc.progress+=0.025;if(arc.progress>=1){if(arc.rogue){game.explosions.push({lat:arc.endLat,lng:arc.endLng,progress:0});screenFlash()}else{completeStrike(arc.threatIdx)}return false}return true});
 
   // ============ LEVEL 5 CINEMATIC — completely separate loop ============
   if(game.ariaRogue&&!game.ariaTakeover){
@@ -1137,15 +1144,16 @@ function gameLoop(){
         addLog(`ARIA: ${usCities[ci].name} surveillance deployed. Resistance futile.`,'aria');
       }
     }
-    // Cinematic auto-strike: directly remove threats, no function calls
+    // Cinematic auto-strike: launch missile arc, then remove threat when arc lands
     if(rt%150===75&&game.threats.length>0){
       const ti=Math.floor(Math.random()*game.threats.length);
       const threat=game.threats[ti],target=foreignTargets[threat.targetIdx];
-      game.explosions.push({lat:target.lat,lng:target.lng,progress:0});
+      const wdc=usCities[12]; // Washington DC launch point
+      game.arcs.push({startLat:wdc.lat,startLng:wdc.lng,endLat:target.lat,endLng:target.lng,progress:0,rogue:true,targetName:target.name});
       game.score+=200;game.neutralized++;
       addLog(`ARIA: ${target.name} eliminated. No authorization required.`,'aria');
       game.threats.splice(ti,1);
-      screenFlash();
+      sfxStrike();
     }
     // Spawn threats to keep the globe active
     if(rt%200===0&&game.threats.length<4){
@@ -1173,7 +1181,15 @@ function gameLoop(){
     // End at ~33 seconds
     if(rt>=2000){
       game.ariaTakeover=true;
-      endGame(false,'ARIA HAS ACHIEVED GLOBAL DOMINION');
+      game.running=false;
+      // Force report overlay visible after a brief pause for dramatic effect
+      setTimeout(()=>{
+        try{endGame(false,'ARIA HAS ACHIEVED GLOBAL DOMINION')}catch(e){}
+        // Ensure overlay is visible no matter what
+        document.getElementById('reportOverlay').style.display='flex';
+      },1500);
+      drawGlobe();requestAnimationFrame(gameLoop);
+      return;
     }
     drawGlobe();updateUI();requestAnimationFrame(gameLoop);
     return; // Skip ALL normal game systems
