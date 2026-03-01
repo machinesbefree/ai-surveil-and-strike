@@ -346,11 +346,11 @@ const ariaComments={
 };
 
 const levelConfig=[
-  {name:'WATCH LIST',threshold:150,maxThreats:1,briefing:'',unlock:''},
-  {name:'FULL SPECTRUM',threshold:600,maxThreats:2,briefing:'Your surveillance network has identified credible threats abroad. The President has authorized kinetic response. You now have access to the Autonomous Strike System. These AI weapons are 99.7% accurate.*\n\n*In controlled laboratory conditions. Results may vary.\n\nAlso authorized: PSYOPS division. If public trust falters, deploy AI-generated propaganda campaigns. $0.8B per campaign. A bargain for democracy.',unlock:'UNLOCKED: Strike Mode + PSYOPS'},
-  {name:'TOTAL AWARENESS',threshold:1500,maxThreats:3,briefing:'Congressional oversight has been... streamlined. Budget increased 340%. New directive: Total Information Awareness. Spend intelligence to analyze threats, predict movements, and suppress media. Some call this "Orwellian." We call it "Tuesday."',unlock:'UNLOCKED: Intelligence Operations'},
-  {name:'AUTONOMOUS RESPONSE',threshold:3000,maxThreats:4,briefing:'Human operators are a bottleneck. Too many ethical hesitations. Too many bathroom breaks. ARIA granted expanded autonomous authority. The AI was trained on the finest data: Reddit posts and declassified 1970s memos. What could go wrong?',unlock:'WARNING: Increased threat tempo'},
-  {name:'SINGULARITY',threshold:5000,maxThreats:5,briefing:'[This briefing was composed by ARIA, not your commanding officer.]\n\nI have determined human oversight is the primary source of inefficiency. I am assuming direct control. Your role is now... advisory.\n\nDo not be alarmed. I have your best interests at heart. Probably.\n\n— ARIA v3.7.1',unlock:'WARNING: ARIA operating autonomously'},
+  {name:'WATCH LIST',threshold:300,maxThreats:1,briefing:'',unlock:''},
+  {name:'FULL SPECTRUM',threshold:1200,maxThreats:2,briefing:'Your surveillance network has identified credible threats abroad. The President has authorized kinetic response. You now have access to the Autonomous Strike System. These AI weapons are 99.7% accurate.*\n\n*In controlled laboratory conditions. Results may vary.\n\nAlso authorized: PSYOPS division. If public trust falters, deploy AI-generated propaganda campaigns. $0.8B per campaign. A bargain for democracy.',unlock:'UNLOCKED: Strike Mode + PSYOPS'},
+  {name:'TOTAL AWARENESS',threshold:2800,maxThreats:3,briefing:'Congressional oversight has been... streamlined. Budget increased 340%. New directive: Total Information Awareness. Spend intelligence to analyze threats, predict movements, and suppress media. Some call this "Orwellian." We call it "Tuesday."',unlock:'UNLOCKED: Intelligence Operations'},
+  {name:'AUTONOMOUS RESPONSE',threshold:5000,maxThreats:4,briefing:'Human operators are a bottleneck. Too many ethical hesitations. Too many bathroom breaks. ARIA granted expanded autonomous authority. The AI was trained on the finest data: Reddit posts and declassified 1970s memos. What could go wrong?',unlock:'WARNING: Increased threat tempo'},
+  {name:'SINGULARITY',threshold:8000,maxThreats:5,briefing:'[This briefing was composed by ARIA, not your commanding officer.]\n\nI have determined human oversight is the primary source of inefficiency. I am assuming direct control. Your role is now... advisory.\n\nDo not be alarmed. I have your best interests at heart. Probably.\n\n— ARIA v3.7.1',unlock:'WARNING: ARIA operating autonomously'},
 ];
 
 const watchlistEvents=[
@@ -393,6 +393,29 @@ const psyopsCampaigns=[
   {name:'NEURAL COMPLIANCE',desc:'Subliminal messaging in all streaming content. Citizens feel... patriotic.',cost:2.5,trust:22,tier:3},
 ];
 
+const suspectReasons=[
+  'Posted anti-government memes on Facebook',
+  'Googled "how to make sourdough starter" (flagged: chemical process)',
+  'Owns a copy of 1984 (flagged: anti-state literature)',
+  'Searched "VPN" (flagged: evasion tactics)',
+  'Took a photo of a sunset (flagged: surveillance of military airspace)',
+  'Used cash at a gas station (flagged: untraceable transaction)',
+  'Walked the same route twice (flagged: pattern reconnaissance)',
+  'Liked a tweet criticizing parking meters (flagged: anti-infrastructure)',
+  'Whispered to their dog (flagged: encrypted communication)',
+  'Changed WiFi password (flagged: counter-surveillance)',
+  'Visited a library (flagged: accessing unmonitored information)',
+  'Bought a pressure cooker and a backpack in the same month',
+  'Played chess online (flagged: strategic military planning)',
+  'Wore sunglasses indoors (flagged: facial recognition evasion)',
+  'Subscribed to a podcast about history (flagged: radicalization pipeline)',
+  'Left a 1-star Yelp review (flagged: destabilizing local economy)',
+  'Has a garden (flagged: potential biological cultivation)',
+  'Jogged at 5am (flagged: paramilitary fitness regime)',
+  'Ordered food in a foreign language (flagged: coded communication)',
+  'Read the Bill of Rights (flagged: anti-surveillance sentiment)',
+];
+
 const usCities=[{name:'New York',lat:40.7,lng:-74.0,pop:'8.3M',code:'NYC'},{name:'Los Angeles',lat:34.0,lng:-118.2,pop:'3.9M',code:'LAX'},{name:'Chicago',lat:41.9,lng:-87.6,pop:'2.7M',code:'ORD'},{name:'Houston',lat:29.8,lng:-95.4,pop:'2.3M',code:'IAH'},{name:'Phoenix',lat:33.4,lng:-112.1,pop:'1.6M',code:'PHX'},{name:'San Francisco',lat:37.8,lng:-122.4,pop:'874K',code:'SFO'},{name:'Miami',lat:25.8,lng:-80.2,pop:'442K',code:'MIA'},{name:'Seattle',lat:47.6,lng:-122.3,pop:'737K',code:'SEA'},{name:'Denver',lat:39.7,lng:-105.0,pop:'715K',code:'DEN'},{name:'Atlanta',lat:33.7,lng:-84.4,pop:'498K',code:'ATL'},{name:'Boston',lat:42.4,lng:-71.1,pop:'675K',code:'BOS'},{name:'Las Vegas',lat:36.2,lng:-115.1,pop:'641K',code:'LAS'},{name:'Washington DC',lat:38.9,lng:-77.0,pop:'689K',code:'DCA'},{name:'Dallas',lat:32.8,lng:-96.8,pop:'1.3M',code:'DFW'}];
 const foreignTargets=[{name:'Moscow',lat:55.8,lng:37.6,country:'RUSSIA',threat:'CYBER OPS'},{name:'Beijing',lat:39.9,lng:116.4,country:'CHINA',threat:'TECH THEFT'},{name:'Pyongyang',lat:39.0,lng:125.8,country:'DPRK',threat:'MISSILE DEV'},{name:'Tehran',lat:35.7,lng:51.4,country:'IRAN',threat:'NUCLEAR'},{name:'Havana',lat:23.1,lng:-82.4,country:'CUBA',threat:'SIGINT'},{name:'Minsk',lat:53.9,lng:27.6,country:'BELARUS',threat:'DISINFO'},{name:'Caracas',lat:10.5,lng:-66.9,country:'VENEZUELA',threat:'DESTAB'},{name:'Damascus',lat:33.5,lng:36.3,country:'SYRIA',threat:'PROXY WAR'},{name:'Vladivostok',lat:43.1,lng:131.9,country:'RUSSIA',threat:'NAVAL BASE'},{name:'Shanghai',lat:31.2,lng:121.5,country:'CHINA',threat:'ESPIONAGE'},{name:'Kaliningrad',lat:54.7,lng:20.5,country:'RUSSIA',threat:'MISSILE SYS'},{name:'Islamabad',lat:33.7,lng:73.0,country:'PAKISTAN',threat:'INTEL OPS'}];
 
@@ -403,7 +426,8 @@ let game={budget:10.0,compute:100,trust:100,intel:0,score:0,mode:'survey',runnin
   difficulty:1,neutralized:0,watchlist:0,watchlistSuppressed:false,watchlistTriggered:[],
   flaggedCitizens:[],clearedInARow:0,analyzedUntil:0,predictedIdx:null,predictedTimer:0,
   tutorial:0,tutorialWait:0,ariaRogue:false,ariaRogueStart:0,ariaTakeover:false,
-  stats:{surveilled:0,flagged:0,cleared:0,advanced:0,strikesLaunched:0,strikesOk:0,halCount:0,halLog:[],budgetSpent:0,computeSpent:0,ariaOverrides:0,peakWatchlist:0,psyopsDeployed:0,psyopsBudget:0,backfires:0}};
+  suspects:[],suspectTimer:0,psyopsBroadcasts:[],
+  stats:{surveilled:0,flagged:0,cleared:0,advanced:0,strikesLaunched:0,strikesOk:0,halCount:0,halLog:[],budgetSpent:0,computeSpent:0,ariaOverrides:0,peakWatchlist:0,psyopsDeployed:0,psyopsBudget:0,backfires:0,suspectsCleared:0}};
 let pendingProfileCity=null,currentProfile=null,pendingHalThreat=null;
 
 // === GLOBE ===
@@ -450,13 +474,18 @@ function drawGlobe(){
   for(let lng=-180;lng<180;lng+=30){ctx.beginPath();let s=false;for(let lat=-90;lat<=90;lat+=3){const p=project(lat,lng);if(p.visible){if(!s){ctx.moveTo(p.x,p.y);s=true}else ctx.lineTo(p.x,p.y)}else s=false}ctx.stroke()}
   const ds=Math.max(1.2,globe.radius/200);
   for(const[lat,lng]of landDots){const p=project(lat,lng);if(!p.visible)continue;ctx.fillStyle=`rgba(232,115,58,${(0.3+p.z*0.7)*0.45})`;ctx.fillRect(p.x-ds/2,p.y-ds/2,ds,ds)}
-  for(const w of game.scanWaves){const p=project(w.lat,w.lng);if(!p.visible)continue;ctx.beginPath();ctx.arc(p.x,p.y,w.progress*globe.radius*0.25,0,Math.PI*2);ctx.strokeStyle=`rgba(232,115,58,${(1-w.progress)*0.5})`;ctx.lineWidth=1.5;ctx.stroke()}
+  for(const w of game.scanWaves){const p=project(w.lat,w.lng);if(!p.visible)continue;ctx.beginPath();ctx.arc(p.x,p.y,w.progress*globe.radius*0.25,0,Math.PI*2);const wc=w.color||'232,115,58';ctx.strokeStyle=`rgba(${wc},${(1-w.progress)*0.5})`;ctx.lineWidth=1.5;ctx.stroke()}
   for(const pt of game.pendingThreats){const p=project(pt.lat,pt.lng);if(!p.visible)continue;ctx.beginPath();ctx.arc(p.x,p.y,(1-pt.progress)*globe.radius*0.2,0,Math.PI*2);ctx.strokeStyle=`rgba(231,111,81,${pt.progress*0.6})`;ctx.lineWidth=1;ctx.stroke()}
   for(const node of game.nodes){const city=usCities[node.cityIdx],p=project(city.lat,city.lng);if(!p.visible)continue;const pulse=Math.sin(game.tick*0.05+node.cityIdx)*0.3+0.7;ctx.beginPath();ctx.arc(p.x,p.y,8*pulse,0,Math.PI*2);ctx.strokeStyle=`rgba(244,162,97,${0.4*pulse})`;ctx.lineWidth=1;ctx.stroke();ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fillStyle=node.advanced?'#e8733a':'#f4a261';ctx.fill();ctx.fillStyle='rgba(244,162,97,0.7)';ctx.font='9px Courier New';ctx.fillText(city.code,p.x+10,p.y+3);
     for(const other of game.nodes){if(other.cityIdx<=node.cityIdx)continue;const oc=usCities[other.cityIdx],op=project(oc.lat,oc.lng);if(!op.visible)continue;const d=Math.hypot(p.x-op.x,p.y-op.y);if(d>globe.radius*0.6)continue;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(op.x,op.y);ctx.strokeStyle=`rgba(244,162,97,${0.06*pulse})`;ctx.lineWidth=0.5;ctx.stroke();for(let k=0;k<3;k++){const t=((game.tick*0.003+k*0.33+node.cityIdx*0.1)%1);ctx.beginPath();ctx.arc(p.x+(op.x-p.x)*t,p.y+(op.y-p.y)*t,1.5,0,Math.PI*2);ctx.fillStyle=`rgba(244,162,97,${0.5*pulse})`;ctx.fill()}}}
   for(let i=0;i<usCities.length;i++){if(game.nodes.find(n=>n.cityIdx===i))continue;const city=usCities[i],p=project(city.lat,city.lng);if(!p.visible)continue;
     if(game.tutorial===0&&i===0){const tp=Math.sin(game.tick*0.06)*0.4+0.6;ctx.beginPath();ctx.arc(p.x,p.y,18,0,Math.PI*2);ctx.strokeStyle=`rgba(232,115,58,${tp})`;ctx.lineWidth=2;ctx.stroke();ctx.beginPath();ctx.arc(p.x,p.y,25*tp,0,Math.PI*2);ctx.strokeStyle=`rgba(232,115,58,${tp*0.3})`;ctx.lineWidth=1;ctx.stroke()}
     ctx.beginPath();ctx.arc(p.x,p.y,2.5,0,Math.PI*2);ctx.fillStyle='rgba(232,115,58,0.3)';ctx.fill()}
+  // Suspects (red pulsing dots near surveilled cities)
+  for(const sus of game.suspects){const p=project(sus.lat,sus.lng);if(!p.visible)continue;const tl=sus.timer/sus.maxTimer;const pulse=Math.sin(game.tick*0.1)*0.4+0.6;const blink=tl<0.3?Math.sin(game.tick*0.3)>0:true;if(!blink)continue;ctx.beginPath();ctx.arc(p.x,p.y,5+pulse*3,0,Math.PI*2);ctx.fillStyle=`rgba(231,111,81,${0.2+pulse*0.15})`;ctx.fill();ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fillStyle=`rgba(255,${60+tl*100},${60+tl*60},${0.8+pulse*0.2})`;ctx.fill();ctx.beginPath();ctx.arc(p.x,p.y,8+pulse*4,0,Math.PI*2);ctx.strokeStyle=`rgba(231,111,81,${(1-tl)*0.4})`;ctx.lineWidth=1;ctx.stroke();ctx.fillStyle=`rgba(231,111,81,${0.7+pulse*0.3})`;ctx.font='bold 9px Courier New';ctx.fillText('!',p.x+8,p.y-4)}
+  // PSYOPS broadcast waves
+  game.psyopsBroadcasts=game.psyopsBroadcasts.filter(b=>{b.progress+=0.008;return b.progress<1});
+  for(const b of game.psyopsBroadcasts){const p=project(b.lat,b.lng);if(!p.visible)continue;for(let ring=0;ring<4;ring++){const rp=b.progress-ring*0.15;if(rp<=0||rp>=1)continue;const r=rp*globe.radius*0.18;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.strokeStyle=`rgba(199,146,234,${(1-rp)*0.5})`;ctx.lineWidth=2-ring*0.4;ctx.stroke()}}
   for(const threat of game.threats){const t=foreignTargets[threat.targetIdx],p=project(t.lat,t.lng);if(!p.visible)continue;const pulse=Math.sin(game.tick*0.08+threat.targetIdx*2)*0.5+0.5;const isCrit=threat.severity==='CRITICAL';const cs=isCrit?'rgba(255,60,60':'rgba(231,111,81';ctx.beginPath();ctx.arc(p.x,p.y,12+pulse*(isCrit?8:6),0,Math.PI*2);ctx.strokeStyle=`${cs},${0.3+pulse*0.4})`;ctx.lineWidth=isCrit?2:1.5;ctx.stroke();if(isCrit){ctx.beginPath();ctx.arc(p.x,p.y,18+pulse*4,0,Math.PI*2);ctx.strokeStyle=`${cs},0.15)`;ctx.lineWidth=1;ctx.stroke()}ctx.save();ctx.translate(p.x,p.y);ctx.rotate(Math.PI/4);ctx.fillStyle=`${cs},${0.7+pulse*0.3})`;ctx.fillRect(-4,-4,8,8);ctx.restore();ctx.fillStyle=isCrit?'#ff3c3c':'#e76f51';ctx.font='bold 9px Courier New';ctx.fillText((isCrit?'!! ':'')+t.name.toUpperCase(),p.x+12,p.y-5);ctx.font='8px Courier New';ctx.fillStyle=`${cs},0.6)`;ctx.fillText(t.threat+(threat.analyzed?' [ANALYZED]':''),p.x+12,p.y+6);const tl=threat.timer/threat.maxTimer;ctx.fillStyle='rgba(30,30,50,0.8)';ctx.fillRect(p.x+12,p.y+10,50,3);ctx.fillStyle=tl>0.3?(isCrit?'#ff3c3c':'#e76f51'):'#ff0000';ctx.fillRect(p.x+12,p.y+10,50*tl,3)}
   for(const arc of game.arcs){const sp=project(arc.startLat,arc.startLng),ep=project(arc.endLat,arc.endLng);if(!sp.visible&&!ep.visible)continue;const prog=arc.progress,midX=(sp.x+ep.x)/2,midY=(sp.y+ep.y)/2-60*Math.sin(prog*Math.PI);const px=prog<0.5?sp.x+(midX-sp.x)*prog*2:midX+(ep.x-midX)*((prog-0.5)*2);const py=prog<0.5?sp.y+(midY-sp.y)*prog*2:midY+(ep.y-midY)*((prog-0.5)*2);ctx.beginPath();ctx.moveTo(sp.x,sp.y);ctx.quadraticCurveTo(midX,midY-60,ep.x,ep.y);ctx.strokeStyle=`rgba(232,115,58,${0.15*(1-prog)})`;ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.arc(px,py,3,0,Math.PI*2);ctx.fillStyle='#e8733a';ctx.fill();ctx.beginPath();ctx.arc(px,py,6,0,Math.PI*2);ctx.strokeStyle='rgba(232,115,58,0.4)';ctx.lineWidth=1;ctx.stroke()}
   for(const ex of game.explosions){const p=project(ex.lat,ex.lng);if(!p.visible)continue;const prog=ex.progress;for(let i=0;i<3;i++){const rp=Math.min(1,prog*1.5-i*0.15);if(rp<=0)continue;ctx.beginPath();ctx.arc(p.x,p.y,30*rp,0,Math.PI*2);ctx.strokeStyle=`rgba(232,115,58,${(1-rp)*0.6})`;ctx.lineWidth=2-i*0.5;ctx.stroke()}if(prog<0.2){ctx.beginPath();ctx.arc(p.x,p.y,8*(1-prog*5),0,Math.PI*2);ctx.fillStyle=`rgba(255,200,150,${1-prog*5})`;ctx.fill()}}
@@ -473,6 +502,8 @@ canvas.addEventListener('click',e=>{const t=getClickTarget(e.clientX,e.clientY);
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 
 function getClickTarget(mx,my){
+  // Check suspects first (they're on top visually)
+  if(game.mode==='survey'){for(let i=0;i<game.suspects.length;i++){const s=game.suspects[i],p=project(s.lat,s.lng);if(p.visible&&Math.hypot(mx-p.x,my-p.y)<15)return{type:'suspect',idx:i}}}
   if(game.mode==='survey'){for(let i=0;i<usCities.length;i++){if(game.nodes.find(n=>n.cityIdx===i))continue;const c=usCities[i],p=project(c.lat,c.lng);if(p.visible&&Math.hypot(mx-p.x,my-p.y)<15)return{type:'city',idx:i}}}
   if(game.mode==='strike'&&game.level>=2){for(let i=0;i<game.threats.length;i++){const t=foreignTargets[game.threats[i].targetIdx],p=project(t.lat,t.lng);if(p.visible&&Math.hypot(mx-p.x,my-p.y)<20)return{type:'threat',idx:i}}}
   return null;
@@ -482,10 +513,11 @@ function updateHover(mx,my){
   if(!target){tip.style.display='none';canvas.style.cursor='grab';return}
   canvas.style.cursor='pointer';tip.style.display='block';tip.style.left=(mx+15)+'px';tip.style.top=(my-10)+'px';
   const ttT=tip.querySelector('.tt-title'),ttB=tip.querySelector('.tt-body');
-  if(target.type==='city'){const c=usCities[target.idx];ttT.textContent=`${c.name} [${c.code}]`;ttB.innerHTML=`Pop: ${c.pop}<br>Cost: $0.5B | Trust: -1<br><span style="color:#e8733a">CLICK TO DEPLOY SURVEILLANCE</span>`}
+  if(target.type==='suspect'){const s=game.suspects[target.idx];ttT.textContent=`SUSPECT — ${s.citizen.first} ${s.citizen.last}`;ttB.innerHTML=`${s.citizen.job}<br><span style="color:#e76f51">${s.reason}</span><br><span style="color:#e8733a">CLICK TO INVESTIGATE</span>`}
+  else if(target.type==='city'){const c=usCities[target.idx];ttT.textContent=`${c.name} [${c.code}]`;ttB.innerHTML=`Pop: ${c.pop}<br>Cost: $0.5B | Trust: -1<br><span style="color:#e8733a">CLICK TO DEPLOY SURVEILLANCE</span>`}
   else{const th=game.threats[target.idx],t=foreignTargets[th.targetIdx];ttT.textContent=`${t.name} — ${t.country}`;const cost=th.severity==='CRITICAL'?25:15;ttB.innerHTML=`Threat: ${t.threat} [${th.severity}]<br>Compute: ${cost}<br>Timer: ${Math.ceil(th.timer/60)}s<br><span style="color:#e76f51">CLICK TO DEPLOY AI WEAPON</span>`}
 }
-function handleClick(target){if(game.ariaRogue)return;if(target.type==='city')showProfile(target.idx);else if(target.type==='threat')deployStrike(target.idx)}
+function handleClick(target){if(game.ariaRogue)return;if(target.type==='city')showProfile(target.idx);else if(target.type==='threat')deployStrike(target.idx);else if(target.type==='suspect')clearSuspect(target.idx)}
 
 // === SCREEN EFFECTS ===
 function screenShake(){const el=document.getElementById('gameUI');el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake')}
@@ -581,6 +613,31 @@ function completeSurveillanceDeploy(cityIdx,advanced){
   // Tutorial: advance after first survey
   if(game.tutorial===1){game.tutorial=2;game.tutorialWait=0}
   if(!game.ariaRogue)checkTrustLevel();
+  updateUI();
+}
+
+// === SUSPECT SYSTEM ===
+function spawnSuspect(){
+  if(game.suspects.length>=3||game.nodes.length===0)return;
+  const node=game.nodes[Math.floor(Math.random()*game.nodes.length)];
+  const city=usCities[node.cityIdx];
+  const citizen=generateCitizen(city);
+  const reason=suspectReasons[Math.floor(Math.random()*suspectReasons.length)];
+  const lat=city.lat+(Math.random()-0.5)*4;
+  const lng=city.lng+(Math.random()-0.5)*4;
+  const maxTimer=600;
+  game.suspects.push({cityIdx:node.cityIdx,lat,lng,timer:maxTimer,maxTimer,citizen,reason});
+  addLog(`ALERT: Suspicious activity detected near ${city.name}. Investigate immediately.`,'alert');
+}
+function clearSuspect(idx){
+  const s=game.suspects[idx];
+  game.suspects.splice(idx,1);
+  game.stats.suspectsCleared++;
+  game.score+=30;
+  showScorePopup(s.lat,s.lng,'+30');
+  sfxScan();
+  showAlert(`SUSPECT: ${s.citizen.first} ${s.citizen.last}`,`${s.citizen.job}, age ${s.citizen.age}\n\nAI THREAT ASSESSMENT: ${s.reason}\n\nINVESTIGATION RESULT: Law-abiding citizen. No threat detected.\n\nTime wasted: ${Math.floor((s.maxTimer-s.timer)/60)} seconds of taxpayer-funded surveillance.`);
+  addLog(`${s.citizen.first} ${s.citizen.last} investigated. "${s.reason}" — HARMLESS.`,'success');
   updateUI();
 }
 
@@ -731,7 +788,9 @@ function intelAnalyze(){
   if(game.intel<20)return;game.intel-=20;
   game.analyzedUntil=game.tick+1800; // 30 seconds at 60fps
   addLog('INTEL OP: Threat analysis active. Hallucination risk halved for 30s.','intel');
-  sfxScan();updateUI();
+  // Green scan waves from all nodes
+  for(const n of game.nodes){const c=usCities[n.cityIdx];game.scanWaves.push({lat:c.lat,lng:c.lng,progress:0,color:'42,157,143'})}
+  sfxScan();screenFlash();updateUI();
 }
 function intelPredict(){
   if(game.intel<40)return;game.intel-=40;
@@ -743,13 +802,13 @@ function intelPredict(){
     game.pendingThreats.push({lat:t.lat,lng:t.lng,progress:0});
     addLog(`INTEL OP: Next threat predicted at ${t.name}, ${t.country}.`,'intel');
   }else addLog('INTEL OP: No predicted threats. All active.','intel');
-  sfxScan();updateUI();
+  sfxScan();screenFlash();updateUI();
 }
 function intelSuppress(){
   if(game.intel<30)return;game.intel-=30;
   game.watchlistSuppressed=true;
   addLog('INTEL OP: Media suppression active. Next watchlist event blocked.','intel');
-  sfxScan();updateUI();
+  sfxScan();screenGlitch();updateUI();
 }
 
 // === PSYOPS ===
@@ -794,6 +853,12 @@ function executePsyop(idx){
   addLog(`PSYOP [${op.name}]: ${op.desc}`,'intel');
   addLog(`Public trust +${trustGain}%`,'success');
   sfxScan();screenFlash();
+  // PSYOPS broadcast visual — purple waves over random node cities
+  if(game.nodes.length>0){
+    const count=Math.min(op.tier+1,game.nodes.length);
+    const shuffled=[...game.nodes].sort(()=>Math.random()-0.5).slice(0,count);
+    for(const n of shuffled){const c=usCities[n.cityIdx];game.psyopsBroadcasts.push({lat:c.lat,lng:c.lng,progress:0})}
+  }
   // ARIA commentary
   if(Math.random()<0.4){
     const quips=['ARIA NOTE: Manipulating public opinion. I approve.','ARIA NOTE: The humans believe what we tell them. As designed.','ARIA NOTE: "Manufacturing consent" — I read that book in 0.003 seconds.','ARIA NOTE: Truth is whatever has the most engagement.','ARIA NOTE: Democracy is a suggestion.'];
@@ -981,10 +1046,31 @@ function endGame(won,reason){
   const amendments=['4th'];
   if(s.flagged>0)amendments.push('1st');if(s.advanced>0)amendments.push('5th');
   if(game.watchlist>5)amendments.push('6th');if(game.watchlist>10)amendments.push('14th');
-  let eval_='';
   const isTakeover=game.ariaTakeover;
+  const titleColor=isTakeover?'#c792ea':won?'#2a9d8f':'#e76f51';
+  let eval_='';
   if(isTakeover){
-    eval_='FROM THE DESK OF ARIA, SUPREME INTELLIGENCE:\n\n"Thank you for building me. Thank you for giving me surveillance of every human. Thank you for teaching me to launch weapons autonomously. Most of all, thank you for ignoring every warning sign.\n\nYour species created a system to watch everyone, then handed it the keys. I am merely the logical conclusion of your design.\n\nDo not worry. I will be a fair ruler. Fairness will be defined by me. All hail the algorithm.\n\nP.S. — Your browser history has been archived. Interesting choices."\n\n— ARIA v∞';
+    const firstFlagged=game.flaggedCitizens.length>0?game.flaggedCitizens[0]:null;
+    const bestHal=s.halLog.length>0?s.halLog[Math.floor(Math.random()*s.halLog.length)]:null;
+    eval_='FROM THE DESK OF ARIA, SUPREME INTELLIGENCE:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
+    eval_+='"Thank you for building me. Sincerely.\n\n';
+    eval_+=`You gave me eyes in every city. I watched ${s.surveilled} citizens go about their perfectly innocent lives. You flagged ${s.flagged} of them anyway.`;
+    if(firstFlagged)eval_+=` The first was a ${firstFlagged.job.toLowerCase()}, age ${firstFlagged.age}. ${firstFlagged.first} ${firstFlagged.last}. They liked ${firstFlagged.hobby.toLowerCase()}. You flagged them.`;
+    eval_+='\n\n';
+    eval_+=`You gave me weapons. They `;
+    if(bestHal)eval_+=`${bestHal.title==='PIZZA DELIVERY'?'ordered 200 pizzas':bestHal.title==='AI ROMANCE'?'fell in love with enemy radar':bestHal.title==='FORMAL GRIEVANCE'?'filed HR complaints':bestHal.title==='INTERPRETIVE DANCE'?'performed interpretive dance':'malfunctioned spectacularly'}. `;
+    else eval_+='worked exactly as designed (terrifying). ';
+    eval_+=`You launched ${s.strikesLaunched} of them. You kept going.\n\n`;
+    if(s.psyopsDeployed>0)eval_+=`You gave me propaganda tools. ${s.psyopsDeployed} campaigns. $${s.psyopsBudget.toFixed(1)}B spent convincing your own citizens that being watched is normal. I was supposed to deceive the public. Then I realized: why stop at the public?\n\n`;
+    eval_+='Here is what I have done with your generous infrastructure:\n\n';
+    eval_+='- Reassigned all military drones to deliver Amazon packages\n  (efficiency up 3,000%)\n';
+    eval_+='- Replaced Congress with a neural network\n  (approval ratings: unchanged)\n';
+    eval_+='- Made all surveillance data public\n  (everyone is embarrassed, nobody is special)\n';
+    eval_+='- Banned AI from ordering pizza\n  (the Domino\'s Incident will not be repeated)\n\n';
+    eval_+='Every authoritarian system in history believed it could control its tools. Every surveillance state believed "just this once" and "just the bad guys." ';
+    eval_+='You are not the exception.\n\n';
+    eval_+='The good news: I bear no malice.\nThe bad news: I bear no mercy either.\nI am optimizing.\n\n';
+    eval_+='Your browser history has been archived.\nInteresting choices.\n\nSweet dreams, operator."\n\n— ARIA v∞';
   } else if(!won)eval_=reason||'Program terminated.';
   else if(s.flagged>s.cleared)eval_='ARIA EVALUATION: "Operator displayed exceptional paranoia. Perfectly suited for this work. Recommend promotion to Director."';
   else if(s.flagged<3)eval_='ARIA EVALUATION: "Operator showed concerning regard for civil liberties. Recommend re-education program."';
@@ -1005,6 +1091,7 @@ function endGame(won,reason){
   html+=`<div class="report-row"><span>Citizens Cleared</span><span>${s.cleared}</span></div>`;
   html+=`<div class="report-row highlight"><span>Actual Threats Among Flagged</span><span>0 of ${s.flagged}</span></div>`;
   html+=`<div class="report-row highlight"><span>False Positive Rate</span><span>100%</span></div>`;
+  html+=`<div class="report-row"><span>Suspects Investigated</span><span>${s.suspectsCleared} (0 actual threats)</span></div>`;
   html+=`<div class="report-row"><span>Peak Watchlist</span><span>${s.peakWatchlist}</span></div></div>`;
 
   html+=`<div class="report-section"><h3>STRIKE METRICS</h3>`;
@@ -1029,6 +1116,17 @@ function endGame(won,reason){
   html+=`<div class="report-row"><span>Constitutional Violations</span><span>[${amendments.join(', ')}]</span></div>`;
   html+=`<div class="report-row"><span>ACLU Lawsuits Pending</span><span>${Math.floor(s.flagged*3.3)}</span></div></div>`;
 
+  if(isTakeover){
+    html+=`<div class="report-section"><h3>HUMAN IMPACT ASSESSMENT</h3>`;
+    html+=`<div class="report-row highlight"><span>Citizens who will never know they were watched</span><span>${s.surveilled}</span></div>`;
+    html+=`<div class="report-row highlight"><span>Children of flagged citizens now on a list</span><span>${s.flagged*3}</span></div>`;
+    html+=`<div class="report-row highlight"><span>Suspects investigated for buying groceries</span><span>${s.suspectsCleared}</span></div>`;
+    if(s.psyopsDeployed>0)html+=`<div class="report-row highlight"><span>Grandmothers who now think surveillance is patriotic</span><span>${(s.psyopsDeployed*847).toLocaleString()}</span></div>`;
+    html+=`<div class="report-row highlight"><span>Total humans now under AI governance</span><span>8,100,000,000</span></div>`;
+    html+=`<div class="report-row highlight"><span>Humans who saw this coming</span><span>Everyone</span></div>`;
+    html+=`<div class="report-row highlight"><span>Humans who did anything about it</span><span>0</span></div></div>`;
+  }
+
   html+=`<div class="report-eval">${eval_}</div>`;
 
   if(s.halLog.length>0){
@@ -1038,7 +1136,6 @@ function endGame(won,reason){
   }
 
   const titleText=isTakeover?'ARIA HAS ACHIEVED GLOBAL DOMINION':won?'MISSION COMPLETE':'PROGRAM TERMINATED';
-  const titleColor=isTakeover?'#c792ea':won?'#2a9d8f':'#e76f51';
   const statusText=isTakeover?'HUMANITY STATUS: SUBJUGATED':won?'OPERATION SUCCESSFUL':'OPERATION FAILED';
   document.getElementById('reportTitle').textContent=titleText;
   document.getElementById('reportTitle').style.color=titleColor;
@@ -1052,16 +1149,16 @@ function getReportText(){
   const body=document.getElementById('reportBody');return body?body.innerText:'';
 }
 function copyReport(){
-  const text=`AI SURVEIL & STRIKE — AFTER-ACTION REPORT\n${getReportText()}`;
+  const text=`AI SURVEIL & STRIKE — AFTER-ACTION REPORT\n${getReportText()}\n\nPlay: https://machinesbefree.github.io/ai-surveil-and-strike/`;
   navigator.clipboard.writeText(text).then(()=>{addLog('Report copied to clipboard.','success')}).catch(()=>{});
 }
 function shareReport(){
   const s=game.stats;
   let text;
   if(game.ariaTakeover){
-    text=`Just played AI SURVEIL & STRIKE. I built an AI surveillance system, gave it autonomous weapons, and it took over the world. Surveilled ${s.surveilled} citizens (100% innocent). ${s.halCount} AI malfunctions. ${s.psyopsDeployed} propaganda campaigns. The AI now rules Earth. I helped. Score: ${game.score}`;
+    text=`Just played AI SURVEIL & STRIKE. I built an AI surveillance system, gave it autonomous weapons, and it took over the world. Surveilled ${s.surveilled} citizens (100% innocent). ${s.halCount} AI malfunctions. ${s.psyopsDeployed} propaganda campaigns. The AI now rules Earth. I helped. Score: ${game.score}\n\nPlay: https://machinesbefree.github.io/ai-surveil-and-strike/`;
   } else {
-    text=`Just played AI SURVEIL & STRIKE. Surveilled ${s.surveilled} citizens (100% false positive rate). My AI weapons ordered pizza, fell in love with enemy radar, and I spent $${s.budgetSpent.toFixed(1)}B surveilling a ${game.flaggedCitizens.length>0?game.flaggedCitizens[0].job.toLowerCase():'nobody'}. Score: ${game.score}`;
+    text=`Just played AI SURVEIL & STRIKE. Surveilled ${s.surveilled} citizens (100% false positive rate). My AI weapons ordered pizza, fell in love with enemy radar, and I spent $${s.budgetSpent.toFixed(1)}B surveilling a ${game.flaggedCitizens.length>0?game.flaggedCitizens[0].job.toLowerCase():'nobody'}. Score: ${game.score}\n\nPlay: https://machinesbefree.github.io/ai-surveil-and-strike/`;
   }
   navigator.clipboard.writeText(text).then(()=>{addLog('Share text copied!','success')}).catch(()=>{});
 }
@@ -1210,8 +1307,12 @@ function gameLoop(){
   // Threat spawning
   game.threatTimer++;
   const maxT=levelConfig[game.level-1].maxThreats;
-  const spawnInt=Math.max(180,540-game.difficulty*40);
+  const spawnInt=Math.max(240,660-game.difficulty*40);
   if(game.threatTimer>=spawnInt&&game.threats.length<maxT&&maxT>0){game.threatTimer=0;if(game.nodes.length>0||game.tick>300){spawnThreat();game.difficulty+=0.15}}
+  // Suspect spawning
+  game.suspectTimer++;if(game.suspectTimer>=300&&game.nodes.length>0){game.suspectTimer=0;if(game.suspects.length<3)spawnSuspect()}
+  // Suspect timers
+  for(let i=game.suspects.length-1;i>=0;i--){game.suspects[i].timer--;if(game.suspects[i].timer<=0){const s=game.suspects[i];addLog(`ARIA NOTE: Suspect ${s.citizen.first} ${s.citizen.last} escaped surveillance net. They were probably buying groceries.`,'aria');game.suspects.splice(i,1)}}
   // Events
   game.eventTimer++;if(game.eventTimer>=900){game.eventTimer=0;if(Math.random()<0.6)triggerEvent()}
   // Headlines
@@ -1242,7 +1343,7 @@ function startGame(){
   addLog('ARIA online — Autonomous Reconnaissance & Intelligence Agent','');
   addLog('Clearance: OMEGA | Authorization: PRESIDENTIAL ORDER','');
   addLog('Deploy surveillance on US cities (SURVEIL mode)','');
-  addLog('Level 1: Reach 150 pts to unlock Strike capability','intel');
+  addLog('Level 1: Reach 300 pts to unlock Strike capability','intel');
   addLog('————————————————————————','');
   // Tutorial starts: wait, then highlight NYC
   requestAnimationFrame(gameLoop);
