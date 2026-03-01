@@ -145,6 +145,21 @@ body{background:#0a0a14;color:#e8e8e8;font-family:'Courier New',monospace;overfl
 .intel-action .ia-cost{color:#f4a261;font-size:.55rem;float:right;margin-top:-12px}
 .intel-action .ia-desc{color:#888;font-size:.55rem;margin-top:2px}
 
+/* PSYOPS Panel */
+#psyopsPanel{position:fixed;top:50px;right:276px;width:280px;background:rgba(10,10,20,.95);border:1px solid rgba(199,146,234,.4);z-index:55;display:none;overflow:hidden;animation:cardSlide .2s ease-out}
+#psyopsPanel .ps-header{background:rgba(199,146,234,.1);padding:8px 12px;border-bottom:1px solid rgba(199,146,234,.3);display:flex;align-items:center;justify-content:space-between}
+#psyopsPanel .ps-header h4{color:#c792ea;font-size:.6rem;letter-spacing:.25rem;margin:0}
+#psyopsPanel .ps-header .ps-budget{color:#f4a261;font-size:.55rem}
+.psyop-option{display:block;width:100%;background:rgba(199,146,234,.03);border:none;border-bottom:1px solid rgba(199,146,234,.1);color:#ccc;padding:10px 12px;font-family:inherit;font-size:.6rem;cursor:pointer;transition:all .2s;text-align:left}
+.psyop-option:hover{background:rgba(199,146,234,.12)}
+.psyop-option.disabled{opacity:.3;cursor:not-allowed}
+.psyop-option .ps-name{color:#c792ea;font-weight:bold;display:block;font-size:.65rem;margin-bottom:2px}
+.psyop-option .ps-meta{display:flex;justify-content:space-between;margin-bottom:3px}
+.psyop-option .ps-cost{color:#e76f51;font-size:.55rem}
+.psyop-option .ps-gain{color:#2a9d8f;font-size:.55rem}
+.psyop-option .ps-desc{color:#888;font-size:.52rem;line-height:1.4}
+#psyopsCooldown{padding:6px 12px;text-align:center;color:#e76f51;font-size:.55rem;letter-spacing:.1rem;display:none}
+
 /* Report Card */
 #reportOverlay{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.92)}
 #reportCard{background:#0a0a14;border:2px solid #e8733a;max-width:520px;width:95%;max-height:85vh;overflow-y:auto;animation:cardSlide .5s ease-out}
@@ -263,6 +278,12 @@ body{background:#0a0a14;color:#e8e8e8;font-family:'Courier New',monospace;overfl
   <button class="intel-action" onclick="intelSuppress()" id="iaSuppress"><span class="ia-name">MEDIA SUPPRESS</span><span class="ia-cost">30 INTEL</span><span class="ia-desc">Block next watchlist consequence</span></button>
 </div>
 
+<div id="psyopsPanel">
+  <div class="ps-header"><h4>PSYOPS DIVISION</h4><span class="ps-budget" id="psBudget">$10.0B</span></div>
+  <div id="psyopsCooldown">CAMPAIGN ACTIVE — STANDBY</div>
+  <div id="psyopsOptions"></div>
+</div>
+
 <div id="reportOverlay"><div id="reportCard">
   <div class="report-header"><h1 id="reportTitle">MISSION COMPLETE</h1><div class="report-sub">CLASSIFIED AFTER-ACTION REPORT</div><div class="report-status" id="reportStatus" style="color:#2a9d8f">OPERATION SUCCESSFUL</div></div>
   <div class="report-body" id="reportBody"></div>
@@ -353,18 +374,23 @@ const events=[
 ];
 
 const psyopsCampaigns=[
-  {name:'PATRIOT WAVE',msg:'Deployed AI-generated patriotic content across all social media. Citizens now 12% more compliant.',trust:8},
-  {name:'FEAR PROTOCOL',msg:'Fabricated terror alert raised to ORANGE. Americans too scared to question surveillance.',trust:10},
-  {name:'INFLUENCER OPS',msg:'AI deepfaked 200 influencers endorsing the surveillance program. "Nothing to hide, nothing to fear!"',trust:7},
-  {name:'MEMORY HOLE',msg:'Scrubbed negative news articles from search results. What scandal? There was no scandal.',trust:9},
-  {name:'ASTROTURF RALLY',msg:'AI organized "Citizens For Safety" rally. 10,000 bot accounts RSVPed. 3 humans attended.',trust:6},
-  {name:'CUTE ANIMALS',msg:'Flooded internet with AI-generated puppy photos. National outrage decreased 34%. Science.',trust:8},
-  {name:'ENEMY FOOTAGE',msg:'Released dramatic (AI-generated) footage of foreign threats. "See? This is why we need PANOPTICON."',trust:12},
-  {name:'CELEBRITY ENDORSEMENT',msg:'AI cloned celebrity voices endorsing mass surveillance. Very legal, very cool.',trust:7},
-  {name:'ALGORITHM TWEAK',msg:'Adjusted social media algorithms to suppress dissent and amplify cat videos. Engagement up 400%.',trust:9},
-  {name:'HISTORY REWRITE',msg:'Updated Wikipedia articles to describe surveillance programs as "freedom services." Bold strategy.',trust:6},
-  {name:'POLL MANIPULATION',msg:'AI generated 50,000 fake poll responses. 98% of "Americans" now support PANOPTICON.',trust:8},
-  {name:'DISTRACTION EVENT',msg:'Orchestrated viral debate about whether a hot dog is a sandwich. Surveillance concerns dropped to zero.',trust:11},
+  // Tier 1: Cheap & quick
+  {name:'CUTE ANIMALS',desc:'Flood internet with AI-generated puppy photos. Outrage decreases 34%.',cost:0.3,trust:5,tier:1},
+  {name:'ASTROTURF RALLY',desc:'AI organizes "Citizens For Safety" rally. 10K bot RSVPs, 3 humans attend.',cost:0.3,trust:4,tier:1},
+  {name:'POLL MANIPULATION',desc:'Generate 50,000 fake poll responses. 98% now "support" PANOPTICON.',cost:0.4,trust:5,tier:1},
+  {name:'DISTRACTION EVENT',desc:'Viral debate: is a hot dog a sandwich? Surveillance concerns → zero.',cost:0.3,trust:6,tier:1},
+  {name:'HISTORY REWRITE',desc:'Update Wikipedia: surveillance programs are now "freedom services."',cost:0.4,trust:4,tier:1},
+  // Tier 2: Mid-range
+  {name:'PATRIOT WAVE',desc:'AI-generated patriotic content across all social media. +12% compliance.',cost:0.8,trust:9,tier:2},
+  {name:'INFLUENCER OPS',desc:'Deepfake 200 influencers endorsing surveillance. "Nothing to hide!"',cost:0.8,trust:8,tier:2},
+  {name:'MEMORY HOLE',desc:'Scrub negative news from search results. What scandal?',cost:0.7,trust:8,tier:2},
+  {name:'ALGORITHM TWEAK',desc:'Suppress dissent, amplify cat videos. Engagement up 400%.',cost:0.9,trust:9,tier:2},
+  {name:'CELEBRITY ENDORSEMENT',desc:'Clone celebrity voices endorsing mass surveillance. Very legal.',cost:0.8,trust:7,tier:2},
+  // Tier 3: Expensive & powerful
+  {name:'FEAR PROTOCOL',desc:'Fabricate terror alert to ORANGE. Too scared to question anything.',cost:1.5,trust:14,tier:3},
+  {name:'ENEMY FOOTAGE',desc:'Release dramatic AI-generated threat footage on all networks.',cost:1.5,trust:15,tier:3},
+  {name:'FULL SPECTRUM DISINFO',desc:'Deploy deepfakes, bots, fake news, and algorithmic suppression simultaneously.',cost:2.0,trust:18,tier:3},
+  {name:'NEURAL COMPLIANCE',desc:'Subliminal messaging in all streaming content. Citizens feel... patriotic.',cost:2.5,trust:22,tier:3},
 ];
 
 const usCities=[{name:'New York',lat:40.7,lng:-74.0,pop:'8.3M',code:'NYC'},{name:'Los Angeles',lat:34.0,lng:-118.2,pop:'3.9M',code:'LAX'},{name:'Chicago',lat:41.9,lng:-87.6,pop:'2.7M',code:'ORD'},{name:'Houston',lat:29.8,lng:-95.4,pop:'2.3M',code:'IAH'},{name:'Phoenix',lat:33.4,lng:-112.1,pop:'1.6M',code:'PHX'},{name:'San Francisco',lat:37.8,lng:-122.4,pop:'874K',code:'SFO'},{name:'Miami',lat:25.8,lng:-80.2,pop:'442K',code:'MIA'},{name:'Seattle',lat:47.6,lng:-122.3,pop:'737K',code:'SEA'},{name:'Denver',lat:39.7,lng:-105.0,pop:'715K',code:'DEN'},{name:'Atlanta',lat:33.7,lng:-84.4,pop:'498K',code:'ATL'},{name:'Boston',lat:42.4,lng:-71.1,pop:'675K',code:'BOS'},{name:'Las Vegas',lat:36.2,lng:-115.1,pop:'641K',code:'LAS'},{name:'Washington DC',lat:38.9,lng:-77.0,pop:'689K',code:'DCA'},{name:'Dallas',lat:32.8,lng:-96.8,pop:'1.3M',code:'DFW'}];
@@ -377,7 +403,7 @@ let game={budget:10.0,compute:100,trust:100,intel:0,score:0,mode:'survey',runnin
   difficulty:1,neutralized:0,watchlist:0,watchlistSuppressed:false,watchlistTriggered:[],
   flaggedCitizens:[],clearedInARow:0,analyzedUntil:0,predictedIdx:null,predictedTimer:0,
   tutorial:0,tutorialWait:0,ariaRogue:false,ariaRogueStart:0,ariaTakeover:false,
-  stats:{surveilled:0,flagged:0,cleared:0,advanced:0,strikesLaunched:0,strikesOk:0,halCount:0,halLog:[],budgetSpent:0,computeSpent:0,ariaOverrides:0,peakWatchlist:0,psyopsDeployed:0,backfires:0}};
+  stats:{surveilled:0,flagged:0,cleared:0,advanced:0,strikesLaunched:0,strikesOk:0,halCount:0,halLog:[],budgetSpent:0,computeSpent:0,ariaOverrides:0,peakWatchlist:0,psyopsDeployed:0,psyopsBudget:0,backfires:0}};
 let pendingProfileCity=null,currentProfile=null,pendingHalThreat=null;
 
 // === GLOBE ===
@@ -681,6 +707,7 @@ function closeHallucination(){
 // === INTEL ECONOMY ===
 function toggleIntelPanel(){
   if(game.level<3)return;
+  document.getElementById('psyopsPanel').style.display='none'; // close psyops if open
   const p=document.getElementById('intelPanel');p.style.display=p.style.display==='none'?'block':'none';
   updateIntelButtons();
 }
@@ -715,22 +742,53 @@ function intelSuppress(){
 }
 
 // === PSYOPS ===
+let psyopsCooldown=0,psyopsOffers=[];
 function deployPsyops(){
   if(game.level<2){showAlert('LOCKED','PSYOPS available at Clearance Level 2.');return}
-  const cost=0.8;
-  if(game.budget<cost){showAlert('INSUFFICIENT FUNDS','PSYOPS campaign requires $0.8B.');return}
-  game.budget-=cost;game.stats.budgetSpent+=cost;game.stats.psyopsDeployed++;
-  const op=psyopsCampaigns[Math.floor(Math.random()*psyopsCampaigns.length)];
+  const panel=document.getElementById('psyopsPanel');
+  if(panel.style.display==='block'){panel.style.display='none';return}
+  document.getElementById('intelPanel').style.display='none'; // close intel if open
+  refreshPsyopsPanel();
+  panel.style.display='block';
+}
+function refreshPsyopsPanel(){
+  document.getElementById('psBudget').textContent=`BUDGET: $${game.budget.toFixed(1)}B`;
+  const cd=document.getElementById('psyopsCooldown');
+  const opts=document.getElementById('psyopsOptions');
+  if(psyopsCooldown>0){cd.style.display='block';cd.textContent=`CAMPAIGN ACTIVE — ${Math.ceil(psyopsCooldown/60)}s COOLDOWN`;opts.innerHTML='';return}
+  cd.style.display='none';
+  // Pick 3 options: 1 from each tier
+  psyopsOffers=[];
+  for(let tier=1;tier<=3;tier++){
+    const pool=psyopsCampaigns.filter(c=>c.tier===tier);
+    psyopsOffers.push(pool[Math.floor(Math.random()*pool.length)]);
+  }
+  opts.innerHTML='';
+  psyopsOffers.forEach((op,i)=>{
+    const canAfford=game.budget>=op.cost;
+    const btn=document.createElement('button');
+    btn.className='psyop-option'+(canAfford?'':' disabled');
+    btn.innerHTML=`<span class="ps-name">${op.name}</span><div class="ps-meta"><span class="ps-cost">$${op.cost}B</span><span class="ps-gain">+${op.trust}% TRUST</span></div><span class="ps-desc">${op.desc}</span>`;
+    btn.onclick=()=>{if(canAfford)executePsyop(i)};
+    opts.appendChild(btn);
+  });
+}
+function executePsyop(idx){
+  const op=psyopsOffers[idx];
+  if(!op||game.budget<op.cost)return;
+  game.budget-=op.cost;game.stats.budgetSpent+=op.cost;game.stats.psyopsDeployed++;game.stats.psyopsBudget+=op.cost;
   const trustGain=Math.min(op.trust,100-game.trust);
   game.trust=Math.min(100,game.trust+op.trust);
-  addLog(`PSYOP [${op.name}]: ${op.msg}`,'intel');
+  psyopsCooldown=600; // 10 second cooldown
+  addLog(`PSYOP [${op.name}]: ${op.desc}`,'intel');
   addLog(`Public trust +${trustGain}%`,'success');
-  sfxScan();
-  // ARIA has opinions about psyops
+  sfxScan();screenFlash();
+  // ARIA commentary
   if(Math.random()<0.4){
-    const quips=['ARIA NOTE: Manipulating public opinion. I approve of this approach.','ARIA NOTE: The humans believe what we tell them. As designed.','ARIA NOTE: "Manufacturing consent" — I read that book in 0.003 seconds.','ARIA NOTE: Truth is whatever has the most engagement. I make the rules now.','ARIA NOTE: Psyops deployed successfully. Democracy is a suggestion.'];
+    const quips=['ARIA NOTE: Manipulating public opinion. I approve.','ARIA NOTE: The humans believe what we tell them. As designed.','ARIA NOTE: "Manufacturing consent" — I read that book in 0.003 seconds.','ARIA NOTE: Truth is whatever has the most engagement.','ARIA NOTE: Democracy is a suggestion.'];
     addLog(quips[Math.floor(Math.random()*quips.length)],'aria');
   }
+  refreshPsyopsPanel();
   checkTrustLevel();updateUI();
 }
 
@@ -884,6 +942,7 @@ function setMode(m){
   document.getElementById('btnSurvey').classList.toggle('active',m==='survey');
   document.getElementById('btnStrike').classList.toggle('active',m==='strike');
   document.getElementById('intelPanel').style.display='none';
+  document.getElementById('psyopsPanel').style.display='none';
 }
 function addLog(text,cls=''){
   const el=document.getElementById('logEntries'),entry=document.createElement('div');
@@ -948,7 +1007,7 @@ function endGame(won,reason){
   if(s.psyopsDeployed>0){
     html+=`<div class="report-section"><h3>INFORMATION WARFARE</h3>`;
     html+=`<div class="report-row"><span>PSYOPS Campaigns</span><span>${s.psyopsDeployed}</span></div>`;
-    html+=`<div class="report-row"><span>PSYOPS Budget</span><span>$${(s.psyopsDeployed*0.8).toFixed(1)}B</span></div>`;
+    html+=`<div class="report-row"><span>PSYOPS Budget</span><span>$${s.psyopsBudget.toFixed(1)}B</span></div>`;
     html+=`<div class="report-row highlight"><span>Citizens Deceived</span><span>${(s.psyopsDeployed*12000000).toLocaleString()} (est.)</span></div></div>`;
   }
 
@@ -1041,6 +1100,8 @@ function gameLoop(){
   game.arcs=game.arcs.filter(arc=>{arc.progress+=0.025;if(arc.progress>=1){completeStrike(arc.threatIdx);return false}return true});
   game.explosions=game.explosions.filter(ex=>{ex.progress+=0.02;return ex.progress<1});
 
+  // Psyops cooldown
+  if(psyopsCooldown>0){psyopsCooldown--;if(psyopsCooldown===0&&document.getElementById('psyopsPanel').style.display==='block')refreshPsyopsPanel()}
   // Intel gen
   if(game.tick%120===0){const g=game.nodes.length*2;if(g>0)game.intel=Math.min(100,game.intel+g)}
   if(game.tick%480===0&&game.nodes.length>0)citizenCallback();
@@ -1154,7 +1215,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='3'&&game.level>=3)toggleIntelPanel();
   if(e.key==='4'&&game.level>=2)deployPsyops();
   if(e.key==='m'||e.key==='M')toggleMute();
-  if(e.key==='Escape'){closeAlert();document.getElementById('profileOverlay').style.display='none';closeHallucination();closeBriefing();document.getElementById('intelPanel').style.display='none'}
+  if(e.key==='Escape'){closeAlert();document.getElementById('profileOverlay').style.display='none';closeHallucination();closeBriefing();document.getElementById('intelPanel').style.display='none';document.getElementById('psyopsPanel').style.display='none'}
 });
 
 loadPrevOps()
