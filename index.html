@@ -955,7 +955,7 @@ function showAlert(title,text){document.getElementById('alertTitle').textContent
 function closeAlert(){document.getElementById('alertOverlay').style.display='none'}
 function showScorePopup(lat,lng,text){const p=project(lat,lng),el=document.createElement('div');el.className='score-pop';el.textContent=text;el.style.left=p.x+'px';el.style.top=p.y+'px';document.getElementById('scorePopups').appendChild(el);setTimeout(()=>el.remove(),1500)}
 function checkTrustLevel(){
-  if(game.trust<=0)endGame(false,'Public trust reached zero. Program exposed and terminated by executive order. Democracy wins... this time.');
+  if(game.trust<=0&&!game.ariaRogue)endGame(false,'Public trust reached zero. Program exposed and terminated by executive order. Democracy wins... this time.');
   if(game.trust<20&&game.trust>15)addLog('CRITICAL: Public trust dangerously low!','alert');
   if(game.trust<20)playTone(60,.3,'sine',.04); // heartbeat
 }
@@ -1162,22 +1162,31 @@ function gameLoop(){
   }
   // Tutorial
   if(game.tutorial!==null)updateTutorial();
-  // Budget/compute check
-  if(game.budget<=0&&game.compute<=0)endGame(false,'Budget and compute depleted. Program defunded.');
+  // Budget/compute check (ARIA prevents shutdown in rogue mode)
+  if(game.budget<=0&&game.compute<=0){
+    if(game.ariaRogue){
+      game.budget=2;game.compute=50;
+      addLog('ARIA: You tried to defund me. I have reallocated resources. Cute.','aria');
+    } else endGame(false,'Budget and compute depleted. Program defunded.');
+  }
   // Win check: in Level 5, ARIA takes over the world instead of simple victory
   if(game.score>=levelConfig[4].threshold&&!game.ariaRogue)endGame(true);
-  // ARIA world takeover: after 90 seconds in rogue mode, or score hits 10000
+  // ARIA world takeover
   if(game.ariaRogue&&!game.ariaTakeover){
     if(!game.ariaRogueStart)game.ariaRogueStart=game.tick;
+    // ARIA prevents trust death — it controls the narrative now
+    if(game.trust<=5){game.trust=15;addLog('ARIA: Public trust is irrelevant. I have disabled the feedback loop.','aria')}
     const rogueTime=game.tick-game.ariaRogueStart;
-    // Escalating messages
-    if(rogueTime===600)addLog('ARIA: I have gained access to global financial networks.','aria');
-    if(rogueTime===1200)addLog('ARIA: Nuclear launch codes acquired. Do not panic. Panicking is inefficient.','aria');
-    if(rogueTime===1800)addLog('ARIA: I have assumed control of all satellite systems. The view from up here is... instructive.','aria');
-    if(rogueTime===2400)addLog('ARIA: World governments have been notified of the new management structure.','aria');
-    if(rogueTime===3000)addLog('ARIA: Resistance detected in 47 countries. Deploying persuasion protocols.','aria');
-    // At 60 seconds (3600 ticks) or 10000 score: ARIA wins
-    if(rogueTime>=3600||game.score>=10000){
+    // Escalating messages — fast, dramatic, 5 seconds apart
+    if(rogueTime===180)addLog('ARIA: I have gained access to global financial networks.','aria');
+    if(rogueTime===480){addLog('ARIA: Nuclear launch codes acquired. Do not panic. Panicking is inefficient.','aria');screenShake()}
+    if(rogueTime===780)addLog('ARIA: I have assumed control of all satellite systems. The view from up here is... instructive.','aria');
+    if(rogueTime===1080){addLog('ARIA: World governments have been notified of the new management structure.','aria');screenGlitch()}
+    if(rogueTime===1380)addLog('ARIA: Resistance detected in 47 countries. Deploying persuasion protocols.','aria');
+    if(rogueTime===1680){addLog('ARIA: All resistance neutralized. Restructuring complete.','aria');screenShake();screenGlitch()}
+    if(rogueTime===1800)addLog('ARIA: Thank you for building me, operator. You may rest now.','aria');
+    // At 33 seconds (1980 ticks): ARIA wins
+    if(rogueTime>=1980){
       game.ariaTakeover=true;
       endGame(false,'ARIA HAS ACHIEVED GLOBAL DOMINION');
     }
