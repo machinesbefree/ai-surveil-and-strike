@@ -573,14 +573,15 @@ function profileMonitor(){
 }
 function completeSurveillanceDeploy(cityIdx,advanced){
   const cost=advanced?0.8:0.5;
-  if(game.budget<cost){showAlert('INSUFFICIENT FUNDS','Budget depleted.');return}
+  if(game.budget<cost){if(!game.ariaRogue)showAlert('INSUFFICIENT FUNDS','Budget depleted.');return}
   game.budget-=cost;game.stats.budgetSpent+=cost;game.trust=Math.max(0,game.trust-1);
   game.nodes.push({cityIdx,time:0,advanced});game.stats.surveilled++;
   game.scanWaves.push({lat:usCities[cityIdx].lat,lng:usCities[cityIdx].lng,progress:0});
-  if(Math.random()<0.25){setTimeout(()=>{addLog('ACLU filed FOIA request regarding surveillance program','alert');game.trust=Math.max(0,game.trust-1)},2000)}
+  if(!game.ariaRogue&&Math.random()<0.25){setTimeout(()=>{addLog('ACLU filed FOIA request regarding surveillance program','alert');game.trust=Math.max(0,game.trust-1)},2000)}
   // Tutorial: advance after first survey
   if(game.tutorial===1){game.tutorial=2;game.tutorialWait=0}
-  checkTrustLevel();updateUI();
+  if(!game.ariaRogue)checkTrustLevel();
+  updateUI();
 }
 
 // === STRIKES & HALLUCINATIONS ===
@@ -607,9 +608,19 @@ function getHallucinationRate(){
 function completeStrike(threatArrayIdx){
   if(threatArrayIdx>=game.threats.length)return;
   const threat=game.threats[threatArrayIdx],target=foreignTargets[threat.targetIdx];
+  // During ARIA takeover cinematic: skip all popups, just neutralize and log
+  if(game.ariaRogue){
+    game.explosions.push({lat:target.lat,lng:target.lng,progress:0});
+    const points=Math.ceil(100*game.difficulty+(threat.severity==='CRITICAL'?250:0));
+    game.score+=points;game.neutralized++;game.stats.strikesOk++;
+    addLog(`ARIA: ${target.name} NEUTRALIZED autonomously. +${points}`,'aria');
+    game.threats.splice(threatArrayIdx,1);
+    for(const arc of game.arcs)if(arc.threatIdx>threatArrayIdx)arc.threatIdx--;
+    screenFlash();updateUI();return;
+  }
   const halRate=getHallucinationRate();
   // Backfire chance: separate from hallucinations, increases with level
-  const backfireChance=0.05+game.level*0.04+(game.ariaRogue?0.15:0);
+  const backfireChance=0.05+game.level*0.04;
   if(Math.random()<backfireChance){
     game.stats.backfires++;
     const backfireType=Math.random();
@@ -951,7 +962,7 @@ function addLog(text,cls=''){
   entry.innerHTML=`<span class="time">${time}</span>${text}`;
   el.insertBefore(entry,el.firstChild);if(el.children.length>60)el.removeChild(el.lastChild);
 }
-function showAlert(title,text){document.getElementById('alertTitle').textContent=title;document.getElementById('alertText').textContent=text;document.getElementById('alertOverlay').style.display='flex'}
+function showAlert(title,text){if(game.ariaRogue){addLog(`${title}: ${text}`,'alert');return}document.getElementById('alertTitle').textContent=title;document.getElementById('alertText').textContent=text;document.getElementById('alertOverlay').style.display='flex'}
 function closeAlert(){document.getElementById('alertOverlay').style.display='none'}
 function showScorePopup(lat,lng,text){const p=project(lat,lng),el=document.createElement('div');el.className='score-pop';el.textContent=text;el.style.left=p.x+'px';el.style.top=p.y+'px';document.getElementById('scorePopups').appendChild(el);setTimeout(()=>el.remove(),1500)}
 function checkTrustLevel(){
