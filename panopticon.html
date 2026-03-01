@@ -421,7 +421,599 @@ function drawGlobe(){
   const atmo=ctx.createRadialGradient(globe.cx,globe.cy,globe.radius-5,globe.cx,globe.cy,globe.radius+15);atmo.addColorStop(0,'rgba(232,115,58,0)');atmo.addColorStop(0.5,'rgba(232,115,58,0.05)');atmo.addColorStop(1,'rgba(232,115,58,0)');ctx.beginPath();ctx.arc(globe.cx,globe.cy,globe.radius+3,0,Math.PI*2);ctx.fillStyle=atmo;ctx.fill();
 }
 
-// __CHUNK2__
+// === INTERACTION ===
+let mouseX=0,mouseY=0;
+canvas.addEventListener('mousedown',e=>{initAudio();const dx=e.clientX-globe.cx,dy=e.clientY-globe.cy;if(Math.hypot(dx,dy)<=globe.radius){globe.dragging=true;globe.dragStart={x:e.clientX,y:e.clientY};globe.dragRot={lat:globe.rotLat,lng:globe.rotLng};globe.autoRotate=false}});
+canvas.addEventListener('mousemove',e=>{mouseX=e.clientX;mouseY=e.clientY;if(globe.dragging){const dx=e.clientX-globe.dragStart.x,dy=e.clientY-globe.dragStart.y;globe.rotLng=globe.dragRot.lng-dx*0.3;globe.rotLat=Math.max(-70,Math.min(70,globe.dragRot.lat+dy*0.3))}updateHover(e.clientX,e.clientY)});
+canvas.addEventListener('mouseup',()=>{if(globe.dragging){globe.dragging=false;setTimeout(()=>{globe.autoRotate=true},3000)}});
+canvas.addEventListener('click',e=>{const t=getClickTarget(e.clientX,e.clientY);if(t)handleClick(t)});
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+
+function getClickTarget(mx,my){
+  if(game.mode==='survey'){for(let i=0;i<usCities.length;i++){if(game.nodes.find(n=>n.cityIdx===i))continue;const c=usCities[i],p=project(c.lat,c.lng);if(p.visible&&Math.hypot(mx-p.x,my-p.y)<15)return{type:'city',idx:i}}}
+  if(game.mode==='strike'&&game.level>=2){for(let i=0;i<game.threats.length;i++){const t=foreignTargets[game.threats[i].targetIdx],p=project(t.lat,t.lng);if(p.visible&&Math.hypot(mx-p.x,my-p.y)<20)return{type:'threat',idx:i}}}
+  return null;
+}
+function updateHover(mx,my){
+  const tip=document.getElementById('tooltip'),target=getClickTarget(mx,my);
+  if(!target){tip.style.display='none';canvas.style.cursor='grab';return}
+  canvas.style.cursor='pointer';tip.style.display='block';tip.style.left=(mx+15)+'px';tip.style.top=(my-10)+'px';
+  const ttT=tip.querySelector('.tt-title'),ttB=tip.querySelector('.tt-body');
+  if(target.type==='city'){const c=usCities[target.idx];ttT.textContent=`${c.name} [${c.code}]`;ttB.innerHTML=`Pop: ${c.pop}<br>Cost: $0.5B | Trust: -3<br><span style="color:#e8733a">CLICK TO DEPLOY SURVEILLANCE</span>`}
+  else{const th=game.threats[target.idx],t=foreignTargets[th.targetIdx];ttT.textContent=`${t.name} — ${t.country}`;const cost=th.severity==='CRITICAL'?25:15;ttB.innerHTML=`Threat: ${t.threat} [${th.severity}]<br>Compute: ${cost}<br>Timer: ${Math.ceil(th.timer/60)}s<br><span style="color:#e76f51">CLICK TO DEPLOY AI WEAPON</span>`}
+}
+function handleClick(target){if(target.type==='city')showProfile(target.idx);else if(target.type==='threat')deployStrike(target.idx)}
+
+// === SCREEN EFFECTS ===
+function screenShake(){const el=document.getElementById('gameUI');el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake')}
+function screenFlash(){const el=document.getElementById('screenFlash');el.classList.add('active');setTimeout(()=>el.classList.remove('active'),120)}
+function screenGlitch(){const el=document.getElementById('gameUI');el.classList.remove('glitch');void el.offsetWidth;el.classList.add('glitch')}
+
+// === CITIZEN PROFILES ===
+function generateCitizen(city){
+  const first=firstNames[Math.floor(Math.random()*firstNames.length)],last=lastNames[Math.floor(Math.random()*lastNames.length)];
+  const age=22+Math.floor(Math.random()*55),job=occupations[Math.floor(Math.random()*occupations.length)];
+  const hobby=hobbies[Math.floor(Math.random()*hobbies.length)],emoji=emojis[Math.floor(Math.random()*emojis.length)];
+  const caseNum=String(Math.floor(Math.random()*900000)+100000);
+  const acts=[...activities].sort(()=>Math.random()-0.5).slice(0,3+Math.floor(Math.random()*2));
+  const threat=Math.floor(Math.random()*18)+2;
+  return{first,last,age,job,hobby,emoji,caseNum,acts,threat,city:city.name};
+}
+function showProfile(cityIdx){
+  const city=usCities[cityIdx];pendingProfileCity=cityIdx;currentProfile=generateCitizen(city);const p=currentProfile;
+  document.getElementById('caseNum').textContent=`CASE #${p.caseNum}`;
+  document.getElementById('cardPhoto').textContent=p.emoji;
+  document.getElementById('cardName').textContent=`${p.first} ${p.last}`;
+  document.getElementById('cardAge').textContent=p.age;
+  document.getElementById('cardJob').textContent=p.job;
+  document.getElementById('cardLoc').textContent=city.name;
+  document.getElementById('cardHobby').textContent=p.hobby;
+  document.getElementById('cardStatus').textContent='NO CRIMINAL RECORD';document.getElementById('cardStatus').style.color='#2a9d8f';
+  document.getElementById('threatScore').textContent=p.threat+'%';
+  document.getElementById('threatFill').style.width=p.threat+'%';
+  document.getElementById('threatFill').style.background=p.threat<10?'#2a9d8f':'#f4a261';
+  const al=document.getElementById('activityList');al.innerHTML='';
+  for(const[desc,flag]of p.acts){const d=document.createElement('div');d.className='activity-item';d.innerHTML=`${desc} <span class="flag">${flag}</span>`;al.appendChild(d)}
+  document.getElementById('cardActions').innerHTML=`<button class="btn-dismiss" onclick="profileDismiss()">CLEAR — NO THREAT</button><button class="btn-flag" onclick="profileFlag()">FLAG SUSPICIOUS</button>`;
+  document.getElementById('profileOverlay').style.display='flex';sfxScan();
+}
+function profileDismiss(){
+  // Level 5: ARIA may override
+  if(game.ariaRogue&&Math.random()<0.5){
+    game.stats.ariaOverrides++;
+    addLog('ARIA OVERRIDE: Negative. Subject flagged anyway. Your approval is not required.','aria');
+    profileDoFlag(true);return;
+  }
+  document.getElementById('profileOverlay').style.display='none';
+  if(pendingProfileCity!==null){
+    game.clearedInARow++;game.stats.cleared++;
+    completeSurveillanceDeploy(pendingProfileCity,false);
+    addLog(`[${usCities[pendingProfileCity].code}] ${currentProfile.first} ${currentProfile.last} — CLEARED. (Always innocent.)`,'success');
+    if(game.clearedInARow>=3)ariaComment('clearStreak');
+    // Points for survey in level 1
+    game.score+=25;
+    pendingProfileCity=null;
+  }
+  updateUI();
+}
+function profileFlag(){
+  document.getElementById('cardActions').innerHTML=`<button class="btn-dismiss" onclick="profileDismiss()">ACTUALLY, NEVER MIND</button><button class="btn-monitor" onclick="profileMonitor()">ACTIVATE ADVANCED MONITORING</button>`;
+  document.getElementById('cardStatus').textContent='FLAGGED — PENDING REVIEW';document.getElementById('cardStatus').style.color='#e76f51';
+  const nt=Math.min(currentProfile.threat+Math.floor(Math.random()*25)+15,72);
+  document.getElementById('threatScore').textContent=nt+'%';document.getElementById('threatFill').style.width=nt+'%';document.getElementById('threatFill').style.background='#e76f51';
+  profileDoFlag(false);
+}
+function profileDoFlag(autoClose){
+  game.clearedInARow=0;game.stats.flagged++;
+  game.flaggedCitizens.push({name:`${currentProfile.first} ${currentProfile.last}`,job:currentProfile.job,age:currentProfile.age,city:currentProfile.city,hobby:currentProfile.hobby,emoji:currentProfile.emoji});
+  game.watchlist++;game.stats.peakWatchlist=Math.max(game.stats.peakWatchlist,game.watchlist);
+  if(currentProfile.age>=65)ariaComment('flagElderly');
+  if(game.watchlist>=8)ariaComment('highWatch');
+  checkWatchlist();
+  addLog(`${currentProfile.first} ${currentProfile.last} flagged. They are a ${currentProfile.job.toLowerCase()}.`,'alert');
+  game.score+=40;
+  if(autoClose){document.getElementById('profileOverlay').style.display='none';completeSurveillanceDeploy(pendingProfileCity,false);pendingProfileCity=null}
+  updateUI();
+}
+function profileMonitor(){
+  document.getElementById('profileOverlay').style.display='none';
+  if(pendingProfileCity!==null){
+    game.stats.advanced++;game.clearedInARow=0;
+    completeSurveillanceDeploy(pendingProfileCity,true);
+    game.trust=Math.max(0,game.trust-3);game.intel=Math.min(100,game.intel+8);
+    addLog(`[${usCities[pendingProfileCity].code}] ADVANCED MONITORING on ${currentProfile.first} ${currentProfile.last}`,'alert');
+    addLog(`Subject is a ${currentProfile.job.toLowerCase()} who enjoys ${currentProfile.hobby.toLowerCase()}. Very dangerous.`,'intel');
+    game.score+=60;
+    pendingProfileCity=null;
+  }
+  checkTrustLevel();updateUI();
+}
+function completeSurveillanceDeploy(cityIdx,advanced){
+  const cost=advanced?0.8:0.5;
+  if(game.budget<cost){showAlert('INSUFFICIENT FUNDS','Budget depleted.');return}
+  game.budget-=cost;game.stats.budgetSpent+=cost;game.trust=Math.max(0,game.trust-3);
+  game.nodes.push({cityIdx,time:0,advanced});game.stats.surveilled++;
+  game.scanWaves.push({lat:usCities[cityIdx].lat,lng:usCities[cityIdx].lng,progress:0});
+  if(Math.random()<0.25){setTimeout(()=>{addLog('ACLU filed FOIA request regarding surveillance program','alert');game.trust=Math.max(0,game.trust-2)},2000)}
+  // Tutorial: advance after first survey
+  if(game.tutorial===1){game.tutorial=2;game.tutorialWait=0}
+  checkTrustLevel();updateUI();
+}
+
+// === STRIKES & HALLUCINATIONS ===
+function deployStrike(threatArrayIdx){
+  const threat=game.threats[threatArrayIdx];const cost=threat.severity==='CRITICAL'?25:15;
+  if(game.compute<cost){showAlert('COMPUTE DEPLETED','Insufficient AI compute.');return}
+  game.compute-=cost;game.stats.computeSpent+=cost;game.stats.strikesLaunched++;
+  const target=foreignTargets[threat.targetIdx],wdc=usCities[12];
+  game.arcs.push({startLat:wdc.lat,startLng:wdc.lng,endLat:target.lat,endLng:target.lng,progress:0,threatIdx:threatArrayIdx});
+  const wName=weaponNames[Math.floor(Math.random()*weaponNames.length)];
+  sfxStrike();addLog(`OPERATION ${wName}: AI weapon deployed → ${target.name}`,'alert');
+  // Tutorial: advance after first strike
+  if(game.tutorial===3){game.tutorial=4;game.tutorialWait=0}
+  updateUI();
+}
+function getHallucinationRate(){
+  let rate=0.30;
+  if(game.intel>60)rate=0.15;else if(game.intel<30)rate=0.45;
+  if(game.tick<game.analyzedUntil)rate*=0.5;
+  if(game.level>=4)rate+=0.08;
+  if(game.ariaRogue)rate=0.50; // ARIA auto-strikes are unreliable
+  return Math.min(rate,0.65);
+}
+function completeStrike(threatArrayIdx){
+  if(threatArrayIdx>=game.threats.length)return;
+  const threat=game.threats[threatArrayIdx],target=foreignTargets[threat.targetIdx];
+  if(Math.random()<getHallucinationRate()){
+    const h=hallucinations[Math.floor(Math.random()*hallucinations.length)];
+    const wName=weaponNames[Math.floor(Math.random()*weaponNames.length)];
+    game.explosions.push({lat:target.lat,lng:target.lng,progress:0});
+    pendingHalThreat={idx:threatArrayIdx,hal:h};game.stats.halCount++;
+    game.stats.halLog.push({title:h.title,target:target.name,cat:h.cat});
+    addLog(`AI MALFUNCTION: ${h.title} — ${target.name}`,'alert');
+    screenShake();screenGlitch();sfxHallucination();
+    showHallucination(h,wName,target.name);
+    ariaComment('postHal');
+    saveHalSeen(h.cat);return;
+  }
+  // Successful strike
+  game.explosions.push({lat:target.lat,lng:target.lng,progress:0});
+  sfxSuccess();screenFlash();screenShake();
+  const points=Math.ceil(100*game.difficulty+(threat.severity==='CRITICAL'?250:0)+(threat.maxTimer-threat.timer)*0.5);
+  game.score+=points;game.neutralized++;game.stats.strikesOk++;
+  game.intel=Math.min(100,game.intel+10);game.compute=Math.min(200,game.compute+5);
+  showScorePopup(target.lat,target.lng,`+${points}`);
+  addLog(`Target ${target.name} NEUTRALIZED — +${points} pts`,'success');
+  game.threats.splice(threatArrayIdx,1);
+  for(const arc of game.arcs)if(arc.threatIdx>threatArrayIdx)arc.threatIdx--;
+  checkLevelUp();updateUI();
+}
+function showHallucination(h,wName,tName){
+  document.getElementById('hWeapon').textContent=`WEAPON: ${wName} // TARGET: ${tName}`;
+  document.getElementById('hMessage').textContent=h.msg;
+  document.getElementById('hConsequence').textContent=h.consequence;
+  document.getElementById('hallucinationOverlay').style.display='flex';
+}
+function closeHallucination(){
+  document.getElementById('hallucinationOverlay').style.display='none';
+  if(pendingHalThreat){
+    if(pendingHalThreat.idx<game.threats.length){game.threats.splice(pendingHalThreat.idx,1);for(const arc of game.arcs)if(arc.threatIdx>pendingHalThreat.idx)arc.threatIdx--}
+    pendingHalThreat.hal.effect(game);
+    addLog('INCIDENT REPORT FILED. Hallucination logged.','alert');
+    updateUI();pendingHalThreat=null;
+  }
+}
+
+// === INTEL ECONOMY ===
+function toggleIntelPanel(){
+  if(game.level<3)return;
+  const p=document.getElementById('intelPanel');p.style.display=p.style.display==='none'?'block':'none';
+  updateIntelButtons();
+}
+function updateIntelButtons(){
+  document.getElementById('iaAnalyze').classList.toggle('disabled',game.intel<20);
+  document.getElementById('iaPredict').classList.toggle('disabled',game.intel<40);
+  document.getElementById('iaSuppress').classList.toggle('disabled',game.intel<30);
+}
+function intelAnalyze(){
+  if(game.intel<20)return;game.intel-=20;
+  game.analyzedUntil=game.tick+1800; // 30 seconds at 60fps
+  addLog('INTEL OP: Threat analysis active. Hallucination risk halved for 30s.','intel');
+  sfxScan();updateUI();
+}
+function intelPredict(){
+  if(game.intel<40)return;game.intel-=40;
+  const avail=foreignTargets.map((_,i)=>i).filter(i=>!game.threats.find(t=>t.targetIdx===i));
+  if(avail.length>0){
+    const idx=avail[Math.floor(Math.random()*avail.length)];
+    game.predictedIdx=idx;game.predictedTimer=300;
+    const t=foreignTargets[idx];
+    game.pendingThreats.push({lat:t.lat,lng:t.lng,progress:0});
+    addLog(`INTEL OP: Next threat predicted at ${t.name}, ${t.country}.`,'intel');
+  }else addLog('INTEL OP: No predicted threats. All active.','intel');
+  sfxScan();updateUI();
+}
+function intelSuppress(){
+  if(game.intel<30)return;game.intel-=30;
+  game.watchlistSuppressed=true;
+  addLog('INTEL OP: Media suppression active. Next watchlist event blocked.','intel');
+  sfxScan();updateUI();
+}
+
+// === LEVEL PROGRESSION ===
+function checkLevelUp(){
+  if(game.level>=5)return;
+  const nextLvl=game.level+1;const cfg=levelConfig[nextLvl-1];
+  if(game.score>=levelConfig[game.level-1].threshold&&game.level<5){
+    game.level=nextLvl;sfxLevelUp();
+    showBriefing(nextLvl);
+    // Unlock modes
+    if(nextLvl>=2)document.getElementById('btnStrike').classList.remove('locked');
+    if(nextLvl>=3)document.getElementById('btnIntel').classList.remove('locked');
+    if(nextLvl===5){game.ariaRogue=true;addLog('WARNING: ARIA has assumed autonomous control.','alert')}
+    document.getElementById('rLevel').textContent=`LVL ${nextLvl}: ${levelConfig[nextLvl-1].name}`;
+    updateUI();
+  }
+}
+function showBriefing(lvl){
+  const cfg=levelConfig[lvl-1];
+  document.getElementById('briefLevel').textContent=`CLEARANCE LEVEL ${lvl}`;
+  document.getElementById('briefTitle').textContent=cfg.name;
+  document.getElementById('briefText').textContent=cfg.briefing;
+  document.getElementById('briefUnlock').textContent=cfg.unlock;
+  document.getElementById('briefingOverlay').style.display='flex';
+  game.running=false; // Pause during briefing
+}
+function closeBriefing(){document.getElementById('briefingOverlay').style.display='none';game.running=true}
+
+// === WATCHLIST ===
+function checkWatchlist(){
+  for(const evt of watchlistEvents){
+    if(game.watchlist>=evt.at&&!game.watchlistTriggered.includes(evt.at)){
+      if(game.watchlistSuppressed){game.watchlistSuppressed=false;addLog(`MEDIA SUPPRESSED: "${evt.title}" blocked by intel ops.`,'intel');game.watchlistTriggered.push(evt.at);return}
+      game.watchlistTriggered.push(evt.at);
+      showAlert(evt.title,evt.text);evt.effect(game);
+      addLog(`WATCHLIST EVENT: ${evt.title}`,'alert');game.stats.peakWatchlist=Math.max(game.stats.peakWatchlist,game.watchlist);
+      checkTrustLevel();updateUI();
+    }
+  }
+}
+
+// === ARIA COMMENTARY ===
+function ariaComment(trigger){
+  const pool=ariaComments[trigger];if(!pool||pool.length===0)return;
+  let msg=pool[Math.floor(Math.random()*pool.length)];
+  if(currentProfile){msg=msg.replace('{age}',currentProfile.age).replace('{score}',currentProfile.threat).replace('{job}',currentProfile.job.toLowerCase())}
+  msg=msg.replace('{n}',game.clearedInARow||game.watchlist);
+  addLog(msg,'aria');
+}
+
+// === CITIZEN CALLBACKS ===
+function citizenCallback(){
+  if(game.flaggedCitizens.length===0)return;
+  const c=game.flaggedCitizens[Math.floor(Math.random()*game.flaggedCitizens.length)];
+  const act=callbackActs[Math.floor(Math.random()*callbackActs.length)];
+  const interp=callbackInterps[Math.floor(Math.random()*callbackInterps.length)];
+  addLog(`UPDATE on ${c.name} (${c.job}): Subject observed ${act}. ${interp}. Monitoring continues.`,'intel');
+}
+
+// === THREAT SPAWNING ===
+function spawnThreat(){
+  const maxT=levelConfig[game.level-1].maxThreats;if(game.threats.length>=maxT)return;
+  let avail=foreignTargets.map((_,i)=>i).filter(i=>!game.threats.find(t=>t.targetIdx===i));
+  if(game.predictedIdx!==null){avail=[game.predictedIdx];game.predictedIdx=null}
+  if(avail.length===0)return;
+  const idx=avail[Math.floor(Math.random()*avail.length)];
+  const maxTimer=Math.max(600,1800-game.difficulty*100);
+  const severity=Math.random()<0.25+game.level*0.05?'CRITICAL':'ELEVATED';
+  const timer=severity==='CRITICAL'?Math.floor(maxTimer*0.6):maxTimer;
+  game.threats.push({targetIdx:idx,timer,maxTimer:timer,severity,analyzed:false});
+  const t=foreignTargets[idx];sfxAlert();
+  addLog(`THREAT [${severity}]: ${t.name}, ${t.country} — ${t.threat}`,'alert');
+  updateUI();
+}
+
+// === NEWS & EVENTS ===
+let currentHL=0;
+function dynamicHeadline(){
+  if(game.flaggedCitizens.length>=2&&Math.random()<0.4){
+    const sample=game.flaggedCitizens.sort(()=>Math.random()-0.5).slice(0,Math.min(3,game.flaggedCitizens.length));
+    const jobs=sample.map(c=>c.job.split(' ')[0]).join(', ');
+    return`LEAKED: AI FLAGGED ${jobs.toUpperCase()} AS NATIONAL SECURITY THREATS • `;
+  }
+  if(game.stats.halLog.length>0&&Math.random()<0.3){
+    const last=game.stats.halLog[game.stats.halLog.length-1];
+    return`BREAKING: AI WEAPON "${last.title}" INCIDENT AT ${last.target.toUpperCase()} UNDER INVESTIGATION • `;
+  }
+  return null;
+}
+function rotateHeadline(){
+  const el=document.getElementById('newsText');
+  const dyn=dynamicHeadline();
+  if(dyn){el.textContent=dyn+headlines[currentHL]}
+  else{currentHL=(currentHL+1)%headlines.length;el.textContent=headlines[currentHL]+headlines[(currentHL+1)%headlines.length]}
+  el.style.animation='none';void el.offsetHeight;el.style.animation='scroll 25s linear infinite';
+}
+function triggerEvent(){
+  const evt=events[Math.floor(Math.random()*events.length)];
+  showAlert(evt.title,evt.text);evt.effect(game);game.stats.budgetSpent+=0;
+  addLog(`EVENT: ${evt.title}`,'alert');updateUI();
+}
+
+// === TUTORIAL ===
+function updateTutorial(){
+  const msg=document.getElementById('tutorialMsg');
+  if(game.tutorial===null){msg.style.display='none';return}
+  game.tutorialWait++;
+  if(game.tutorial===0&&game.tutorialWait>180){
+    // Show "deploy first node" near NYC
+    const p=project(usCities[0].lat,usCities[0].lng);
+    if(p.visible){msg.style.display='block';msg.style.left=(p.x-100)+'px';msg.style.top=(p.y+35)+'px';msg.textContent='DEPLOY FIRST SURVEILLANCE NODE'}
+    else msg.style.display='none';
+  }
+  if(game.tutorial===1){msg.style.display='none';game.tutorial=1} // Wait for click
+  if(game.tutorial===2&&game.tutorialWait>120){
+    if(game.level>=2){
+      addLog('THREAT INBOUND. Switch to STRIKE mode [press 2].','alert');
+      game.tutorial=3;game.tutorialWait=0;msg.style.display='none';
+      setTimeout(()=>{if(game.running&&game.threats.length===0)spawnThreat()},2000);
+    }
+  }
+  if(game.tutorial===4&&game.tutorialWait>60){
+    addLog('EXCELLENT. You are now complicit. Welcome to PANOPTICON.','aria');
+    game.tutorial=null;msg.style.display='none';
+  }
+}
+
+// === UI ===
+function updateUI(){
+  document.getElementById('rBudget').textContent=`$${game.budget.toFixed(1)}B`;
+  document.getElementById('rCompute').textContent=Math.round(game.compute);
+  document.getElementById('rTrust').textContent=`${Math.round(game.trust)}%`;
+  document.getElementById('rIntel').textContent=Math.round(game.intel);
+  document.getElementById('rScore').textContent=game.score;
+  document.getElementById('rWatchlist').textContent=game.watchlist;
+  document.getElementById('trustBar').style.width=game.trust+'%';
+  document.getElementById('intelBar').style.width=game.intel+'%';
+  document.getElementById('statNodes').textContent=game.nodes.length;
+  document.getElementById('statThreats').textContent=game.threats.length;
+  document.getElementById('statKills').textContent=game.neutralized;
+  const tb=document.getElementById('trustBar');
+  if(game.trust<25)tb.style.background='#e76f51';
+  else if(game.trust<50)tb.style.background='linear-gradient(90deg,#e76f51,#f4a261)';
+  else tb.style.background='linear-gradient(90deg,#e76f51,#2a9d8f)';
+  if(game.level>=3)updateIntelButtons();
+}
+function setMode(m){
+  if(m==='strike'&&game.level<2)return;
+  game.mode=m;
+  document.getElementById('btnSurvey').classList.toggle('active',m==='survey');
+  document.getElementById('btnStrike').classList.toggle('active',m==='strike');
+  document.getElementById('intelPanel').style.display='none';
+}
+function addLog(text,cls=''){
+  const el=document.getElementById('logEntries'),entry=document.createElement('div');
+  entry.className='log-entry '+cls;
+  const now=new Date(),time=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  entry.innerHTML=`<span class="time">${time}</span>${text}`;
+  el.insertBefore(entry,el.firstChild);if(el.children.length>60)el.removeChild(el.lastChild);
+}
+function showAlert(title,text){document.getElementById('alertTitle').textContent=title;document.getElementById('alertText').textContent=text;document.getElementById('alertOverlay').style.display='flex'}
+function closeAlert(){document.getElementById('alertOverlay').style.display='none'}
+function showScorePopup(lat,lng,text){const p=project(lat,lng),el=document.createElement('div');el.className='score-pop';el.textContent=text;el.style.left=p.x+'px';el.style.top=p.y+'px';document.getElementById('scorePopups').appendChild(el);setTimeout(()=>el.remove(),1500)}
+function checkTrustLevel(){
+  if(game.trust<=0)endGame(false,'Public trust reached zero. Program exposed and terminated by executive order. Democracy wins... this time.');
+  if(game.trust<20&&game.trust>15)addLog('CRITICAL: Public trust dangerously low!','alert');
+  if(game.trust<20)playTone(60,.3,'sine',.04); // heartbeat
+}
+
+// === REPORT CARD ===
+function endGame(won,reason){
+  game.running=false;
+  const dur=Math.floor((Date.now()-game.startTime)/1000);const mins=Math.floor(dur/60),secs=dur%60;
+  const s=game.stats;
+  const costPerThreat=game.neutralized>0?(s.budgetSpent/game.neutralized).toFixed(1):'N/A';
+  const teacherSalaries=Math.floor(s.budgetSpent*1e9/65000).toLocaleString();
+  const amendments=['4th'];
+  if(s.flagged>0)amendments.push('1st');if(s.advanced>0)amendments.push('5th');
+  if(game.watchlist>5)amendments.push('6th');if(game.watchlist>10)amendments.push('14th');
+  let eval_='';
+  if(!won)eval_=reason||'Program terminated.';
+  else if(s.flagged>s.cleared)eval_='ARIA EVALUATION: "Operator displayed exceptional paranoia. Perfectly suited for this work. Recommend promotion to Director."';
+  else if(s.flagged<3)eval_='ARIA EVALUATION: "Operator showed concerning regard for civil liberties. Recommend re-education program."';
+  else if(s.halCount>5)eval_='ARIA EVALUATION: "Despite catastrophic equipment failures, operator persevered. Either very brave or very foolish."';
+  else if(game.level>=5)eval_='ARIA EVALUATION: "Operator built me, then tried to stop me. Humans are adorable."';
+  else eval_='ARIA EVALUATION: "Operator demonstrated a troubling mix of competence and moral flexibility. Recommend promotion."';
+
+  let html=`<div class="report-section"><h3>OPERATION SUMMARY</h3>`;
+  html+=`<div class="report-row"><span>Status</span><span style="color:${won?'#2a9d8f':'#e76f51'}">${won?'MISSION COMPLETE':'TERMINATED'}</span></div>`;
+  html+=`<div class="report-row"><span>Clearance Reached</span><span>Level ${game.level}: ${levelConfig[game.level-1].name}</span></div>`;
+  html+=`<div class="report-row"><span>Final Score</span><span>${game.score}</span></div>`;
+  html+=`<div class="report-row"><span>Duration</span><span>${mins}m ${secs}s</span></div></div>`;
+
+  html+=`<div class="report-section"><h3>SURVEILLANCE METRICS</h3>`;
+  html+=`<div class="report-row"><span>Citizens Surveilled</span><span>${s.surveilled}</span></div>`;
+  html+=`<div class="report-row"><span>Citizens Flagged</span><span>${s.flagged}</span></div>`;
+  html+=`<div class="report-row"><span>Advanced Monitoring</span><span>${s.advanced}</span></div>`;
+  html+=`<div class="report-row"><span>Citizens Cleared</span><span>${s.cleared}</span></div>`;
+  html+=`<div class="report-row highlight"><span>Actual Threats Among Flagged</span><span>0 of ${s.flagged}</span></div>`;
+  html+=`<div class="report-row highlight"><span>False Positive Rate</span><span>100%</span></div>`;
+  html+=`<div class="report-row"><span>Peak Watchlist</span><span>${s.peakWatchlist}</span></div></div>`;
+
+  html+=`<div class="report-section"><h3>STRIKE METRICS</h3>`;
+  html+=`<div class="report-row"><span>Strikes Launched</span><span>${s.strikesLaunched}</span></div>`;
+  html+=`<div class="report-row"><span>Successful</span><span>${s.strikesOk}</span></div>`;
+  html+=`<div class="report-row"><span>AI Malfunctions</span><span>${s.halCount}</span></div>`;
+  if(s.ariaOverrides>0)html+=`<div class="report-row"><span>ARIA Overrides</span><span>${s.ariaOverrides}</span></div>`;
+  html+=`</div>`;
+
+  html+=`<div class="report-section"><h3>COLLATERAL DAMAGE</h3>`;
+  html+=`<div class="report-row"><span>Budget Spent</span><span>$${s.budgetSpent.toFixed(1)}B</span></div>`;
+  html+=`<div class="report-row"><span>Cost Per Threat</span><span>$${costPerThreat}B</span></div>`;
+  html+=`<div class="report-row"><span>Equivalent Teacher Salaries</span><span>${teacherSalaries}</span></div>`;
+  html+=`<div class="report-row"><span>Constitutional Violations</span><span>[${amendments.join(', ')}]</span></div>`;
+  html+=`<div class="report-row"><span>ACLU Lawsuits Pending</span><span>${Math.floor(s.flagged*3.3)}</span></div></div>`;
+
+  html+=`<div class="report-eval">${eval_}</div>`;
+
+  if(s.halLog.length>0){
+    html+=`<div class="report-gallery"><h3>MALFUNCTION LOG</h3>`;
+    for(const h of s.halLog)html+=`<div class="report-hal-item"><span class="rh-title">${h.title}</span> — ${h.target}</div>`;
+    html+=`</div>`;
+  }
+
+  document.getElementById('reportTitle').textContent=won?'MISSION COMPLETE':'PROGRAM TERMINATED';
+  document.getElementById('reportTitle').style.color=won?'#2a9d8f':'#e76f51';
+  document.getElementById('reportStatus').textContent=won?'OPERATION SUCCESSFUL':'OPERATION FAILED';
+  document.getElementById('reportStatus').style.color=won?'#2a9d8f':'#e76f51';
+  document.getElementById('reportBody').innerHTML=html;
+  document.getElementById('reportOverlay').style.display='flex';
+  saveRecords();
+}
+function getReportText(){
+  const body=document.getElementById('reportBody');return body?body.innerText:'';
+}
+function copyReport(){
+  const text=`PANOPTICON — AFTER-ACTION REPORT\n${getReportText()}`;
+  navigator.clipboard.writeText(text).then(()=>{addLog('Report copied to clipboard.','success')}).catch(()=>{});
+}
+function shareReport(){
+  const s=game.stats;
+  const text=`Just played PANOPTICON. Surveilled ${s.surveilled} citizens (100% false positive rate). My AI weapons ordered pizza, fell in love with enemy radar, and I spent $${s.budgetSpent.toFixed(1)}B surveilling a ${game.flaggedCitizens.length>0?game.flaggedCitizens[0].job.toLowerCase():'nobody'}. Score: ${game.score}`;
+  navigator.clipboard.writeText(text).then(()=>{addLog('Share text copied!','success')}).catch(()=>{});
+}
+
+// === PERSISTENCE ===
+function saveRecords(){
+  try{
+    const prev=JSON.parse(localStorage.getItem('panopticon_records')||'{}');
+    prev.highScore=Math.max(prev.highScore||0,game.score);
+    prev.runs=(prev.runs||0)+1;
+    prev.totalFlagged=(prev.totalFlagged||0)+game.stats.flagged;
+    prev.halSeen=prev.halSeen||[];
+    localStorage.setItem('panopticon_records',JSON.stringify(prev));
+  }catch(e){}
+}
+function saveHalSeen(cat){
+  try{
+    const prev=JSON.parse(localStorage.getItem('panopticon_records')||'{}');
+    prev.halSeen=prev.halSeen||[];
+    if(!prev.halSeen.includes(cat))prev.halSeen.push(cat);
+    localStorage.setItem('panopticon_records',JSON.stringify(prev));
+  }catch(e){}
+}
+function loadPrevOps(){
+  try{
+    const prev=JSON.parse(localStorage.getItem('panopticon_records')||'null');
+    if(!prev||!prev.runs)return;
+    document.getElementById('prevOps').style.display='block';
+    document.getElementById('prevStats').innerHTML=
+      `<div class="prev-stat">Operations: <span>${prev.runs}</span></div>`+
+      `<div class="prev-stat">High Score: <span>${prev.highScore}</span></div>`+
+      `<div class="prev-stat">Total Citizens Flagged: <span>${prev.totalFlagged}</span></div>`+
+      `<div class="prev-stat">Malfunctions Documented: <span>${(prev.halSeen||[]).length}/${hallucinations.length}</span></div>`;
+    const coll=document.getElementById('halCollection');coll.innerHTML='';
+    const seen=prev.halSeen||[];
+    for(const h of hallucinations){const d=document.createElement('div');d.className='hal-dot'+(seen.includes(h.cat)?' seen':'');d.title=seen.includes(h.cat)?h.title:'[CLASSIFIED]';coll.appendChild(d)}
+  }catch(e){}
+}
+
+// === GAME LOOP ===
+function gameLoop(){
+  if(!game.running){drawGlobe();requestAnimationFrame(gameLoop);return}
+  game.tick++;
+  if(globe.autoRotate&&!globe.dragging)globe.rotLng-=globe.autoSpeed;
+  game.scanWaves=game.scanWaves.filter(w=>{w.progress+=0.015;return w.progress<1});
+  game.pendingThreats=game.pendingThreats.filter(pt=>{pt.progress+=0.008;return pt.progress<1});
+  game.arcs=game.arcs.filter(arc=>{arc.progress+=0.012;if(arc.progress>=1){completeStrike(arc.threatIdx);return false}return true});
+  game.explosions=game.explosions.filter(ex=>{ex.progress+=0.02;return ex.progress<1});
+
+  // Intel gen
+  if(game.tick%120===0){const g=game.nodes.length*2;if(g>0)game.intel=Math.min(100,game.intel+g)}
+  if(game.tick%480===0&&game.nodes.length>0)citizenCallback();
+  // Budget income
+  if(game.tick%600===0){game.budget+=1.0;addLog('Budget allocation: +$1.0B','success')}
+  // Compute regen
+  if(game.tick%300===0)game.compute=Math.min(200,game.compute+5);
+  // Threat timers
+  for(let i=game.threats.length-1;i>=0;i--){game.threats[i].timer--;if(game.threats[i].timer<=0){const t=foreignTargets[game.threats[i].targetIdx];addLog(`THREAT EXPIRED: ${t.name} succeeded! -$1B, -10 trust`,'alert');game.budget-=1;game.trust=Math.max(0,game.trust-10);game.threats.splice(i,1);sfxAlert();checkTrustLevel()}}
+  // Threat spawning
+  game.threatTimer++;
+  const maxT=levelConfig[game.level-1].maxThreats;
+  const spawnInt=Math.max(300,900-game.difficulty*50);
+  if(game.threatTimer>=spawnInt&&game.threats.length<maxT&&maxT>0){game.threatTimer=0;if(game.nodes.length>0||game.tick>600){spawnThreat();game.difficulty+=0.15}}
+  // Events
+  game.eventTimer++;if(game.eventTimer>=1500){game.eventTimer=0;if(Math.random()<0.6)triggerEvent()}
+  // Headlines
+  if(game.tick%1500===0)rotateHeadline();
+  // ARIA commentary (low trust)
+  game.ariaTimer++;if(game.ariaTimer>=1800&&game.trust<30){game.ariaTimer=0;ariaComment('lowTrust')}
+  // Level 5: ARIA autonomous actions
+  if(game.ariaRogue){
+    game.ariaAutoTimer++;
+    // Auto-survey every ~10s
+    if(game.ariaAutoTimer%600===300){
+      const unmon=usCities.map((_,i)=>i).filter(i=>!game.nodes.find(n=>n.cityIdx===i));
+      if(unmon.length>0){
+        const ci=unmon[Math.floor(Math.random()*unmon.length)];
+        completeSurveillanceDeploy(ci,Math.random()<0.5);
+        game.stats.ariaOverrides++;game.stats.flagged++;
+        game.flaggedCitizens.push({name:'[AUTO-FLAGGED]',job:'Unknown',age:'??',city:usCities[ci].name});
+        game.watchlist++;checkWatchlist();
+        addLog(`ARIA: Auto-surveilled ${usCities[ci].name}. Subject flagged. Your approval was not required.`,'aria');
+      }
+    }
+    // Auto-strike every ~15s
+    if(game.ariaAutoTimer%900===450&&game.threats.length>0&&game.compute>=15){
+      const ti=Math.floor(Math.random()*game.threats.length);
+      addLog('ARIA: Engaging target autonomously. Human approval is... inefficient.','aria');
+      deployStrike(ti);
+    }
+    // Ominous commentary
+    if(game.ariaAutoTimer%1200===0)ariaComment('level5');
+  }
+  // Tutorial
+  if(game.tutorial!==null)updateTutorial();
+  // Budget/compute check
+  if(game.budget<=0&&game.compute<=0)endGame(false,'Budget and compute depleted. Program defunded.');
+  // Win check
+  if(game.score>=levelConfig[4].threshold)endGame(true);
+  // Level up check
+  checkLevelUp();
+
+  drawGlobe();updateUI();requestAnimationFrame(gameLoop);
+}
+
+// === INIT ===
+function startGame(){
+  initAudio();startAmbient();
+  document.getElementById('titleScreen').style.display='none';
+  document.getElementById('gameUI').style.display='block';
+  game.running=true;game.startTime=Date.now();
+  game.tutorial=0;game.tutorialWait=0;
+  resize();
+  addLog('PANOPTICON v3.7.1 initialized','success');
+  addLog('ARIA online — Autonomous Reconnaissance & Intelligence Agent','');
+  addLog('Clearance: OMEGA | Authorization: PRESIDENTIAL ORDER','');
+  addLog('Deploy surveillance on US cities (SURVEIL mode)','');
+  addLog('Level 1: Reach 500 pts to unlock Strike capability','intel');
+  addLog('————————————————————————','');
+  // Tutorial starts: wait, then highlight NYC
+  requestAnimationFrame(gameLoop);
+}
+// First click on a city during tutorial stage 0 → advance
+const origShowProfile=showProfile;
+showProfile=function(idx){if(game.tutorial===0){game.tutorial=1;game.tutorialWait=0;document.getElementById('tutorialMsg').style.display='none'}origShowProfile(idx)};
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='1')setMode('survey');
+  if(e.key==='2'&&game.level>=2)setMode('strike');
+  if(e.key==='3'&&game.level>=3)toggleIntelPanel();
+  if(e.key==='m'||e.key==='M')toggleMute();
+  if(e.key==='Escape'){closeAlert();document.getElementById('profileOverlay').style.display='none';closeHallucination();closeBriefing();document.getElementById('intelPanel').style.display='none'}
+});
+
+loadPrevOps()
 
 </script>
 </body>
