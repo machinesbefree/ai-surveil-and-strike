@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PANOPTICON — AI Global Command</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@font-face{font-family:'Mono';src:local('Courier New'),local('monospace')}
+body{background:#0a0a14;color:#e8e8e8;font-family:'Courier New',monospace;overflow:hidden;height:100vh;width:100vw;user-select:none}
+#titleScreen{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#1a1a2e 0%,#0a0a14 70%)}
+#titleScreen h1{font-size:4rem;color:#e8733a;letter-spacing:1.2rem;text-shadow:0 0 40px rgba(232,115,58,.5),0 0 80px rgba(232,115,58,.2);margin-bottom:.5rem;animation:pulse 3s ease-in-out infinite}
+#titleScreen .subtitle{color:#f4a261;font-size:1rem;letter-spacing:.6rem;margin-bottom:3rem;opacity:.8}
+#titleScreen .tagline{color:#888;font-size:.75rem;letter-spacing:.3rem;margin-bottom:2rem;text-align:center;line-height:1.8}
+#startBtn{background:transparent;border:2px solid #e8733a;color:#e8733a;padding:15px 50px;font-family:inherit;font-size:1.1rem;letter-spacing:.4rem;cursor:pointer;transition:all .3s;position:relative;overflow:hidden}
+#startBtn:hover{background:#e8733a;color:#0a0a14;box-shadow:0 0 30px rgba(232,115,58,.4)}
+#startBtn::before{content:'';position:absolute;top:-2px;left:-2px;right:-2px;bottom:-2px;background:linear-gradient(45deg,#e8733a,transparent,#e8733a);z-index:-1;animation:borderRotate 3s linear infinite;opacity:.5}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+@keyframes borderRotate{to{filter:hue-rotate(360deg)}}
+#gameUI{display:none;height:100vh;width:100vw;position:relative}
+#topBar{position:fixed;top:0;left:0;right:0;height:50px;background:rgba(10,10,20,.95);border-bottom:1px solid rgba(232,115,58,.3);display:flex;align-items:center;padding:0 20px;z-index:50;gap:20px}
+.resource{display:flex;align-items:center;gap:6px;font-size:.75rem;letter-spacing:.1rem}
+.resource .label{color:#888}
+.resource .value{color:#f4a261;font-weight:bold;min-width:50px}
+.resource .bar{width:80px;height:6px;background:#1a1a2e;border:1px solid rgba(232,115,58,.2);border-radius:3px;overflow:hidden}
+.resource .bar .fill{height:100%;transition:width .5s;border-radius:3px}
+.fill-trust{background:linear-gradient(90deg,#e76f51,#2a9d8f)}
+.fill-intel{background:linear-gradient(90deg,#264653,#e8733a)}
+#modeIndicator{margin-left:auto;display:flex;gap:8px}
+.mode-btn{background:transparent;border:1px solid rgba(232,115,58,.3);color:#888;padding:5px 15px;font-family:inherit;font-size:.65rem;letter-spacing:.15rem;cursor:pointer;transition:all .3s}
+.mode-btn.active{border-color:#e8733a;color:#e8733a;background:rgba(232,115,58,.1);box-shadow:0 0 10px rgba(232,115,58,.2)}
+.mode-btn:hover{border-color:#e8733a;color:#e8733a}
+#globeCanvas{display:block;cursor:grab}
+#globeCanvas:active{cursor:grabbing}
+#sidePanel{position:fixed;top:55px;right:0;width:280px;bottom:40px;background:rgba(10,10,20,.9);border-left:1px solid rgba(232,115,58,.2);padding:12px;overflow-y:auto;z-index:40;font-size:.7rem}
+#sidePanel h3{color:#e8733a;letter-spacing:.2rem;font-size:.75rem;margin-bottom:8px;border-bottom:1px solid rgba(232,115,58,.2);padding-bottom:5px}
+.log-entry{padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);line-height:1.4;color:#aaa}
+.log-entry .time{color:#e8733a;margin-right:6px}
+.log-entry.alert{color:#e76f51}
+.log-entry.success{color:#2a9d8f}
+.log-entry.intel{color:#f4a261}
+#newsTicker{position:fixed;bottom:0;left:0;right:0;height:36px;background:rgba(10,10,20,.95);border-top:1px solid rgba(232,115,58,.3);display:flex;align-items:center;z-index:50;overflow:hidden}
+#newsTicker .label{background:#e8733a;color:#0a0a14;padding:4px 12px;font-size:.65rem;font-weight:bold;letter-spacing:.15rem;white-space:nowrap;flex-shrink:0}
+#newsText{color:#ccc;font-size:.65rem;letter-spacing:.1rem;white-space:nowrap;animation:scroll 30s linear infinite;padding-left:20px}
+@keyframes scroll{0%{transform:translateX(100vw)}100%{transform:translateX(-200%)}}
+#tooltip{position:fixed;background:rgba(10,10,20,.95);border:1px solid #e8733a;padding:8px 12px;font-size:.7rem;pointer-events:none;z-index:200;display:none;max-width:250px;line-height:1.5}
+#tooltip .tt-title{color:#e8733a;font-weight:bold;margin-bottom:3px}
+#alertOverlay{position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7)}
+#alertBox{background:#0d0d1a;border:2px solid #e8733a;padding:30px 40px;max-width:450px;text-align:center}
+#alertBox h2{color:#e8733a;font-size:1.1rem;letter-spacing:.3rem;margin-bottom:15px}
+#alertBox p{color:#ccc;font-size:.8rem;line-height:1.6;margin-bottom:20px}
+#alertBox button{background:transparent;border:1px solid #e8733a;color:#e8733a;padding:8px 30px;font-family:inherit;font-size:.75rem;letter-spacing:.2rem;cursor:pointer;transition:all .3s}
+#alertBox button:hover{background:#e8733a;color:#0a0a14}
+#scorePopups{position:fixed;inset:0;pointer-events:none;z-index:100}
+.score-pop{position:absolute;color:#f4a261;font-size:1.2rem;font-weight:bold;animation:popUp 1.5s ease-out forwards;pointer-events:none;text-shadow:0 0 10px rgba(232,115,58,.5)}
+@keyframes popUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-60px) scale(1.3)}}
+#victoryScreen,#defeatScreen{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,.9)}
+#victoryScreen h1{color:#2a9d8f;font-size:3rem;letter-spacing:1rem;margin-bottom:1rem}
+#defeatScreen h1{color:#e76f51;font-size:3rem;letter-spacing:1rem;margin-bottom:1rem}
+#victoryScreen p,#defeatScreen p{color:#aaa;font-size:.85rem;margin-bottom:2rem;text-align:center;line-height:1.8}
+#victoryScreen button,#defeatScreen button{background:transparent;border:2px solid #e8733a;color:#e8733a;padding:12px 40px;font-family:inherit;font-size:1rem;letter-spacing:.3rem;cursor:pointer;transition:all .3s}
+#victoryScreen button:hover,#defeatScreen button:hover{background:#e8733a;color:#0a0a14}
+.scanline{position:fixed;top:0;left:0;right:0;height:2px;background:rgba(232,115,58,.15);z-index:60;animation:scanDown 8s linear infinite;pointer-events:none}
+@keyframes scanDown{0%{top:-2px}100%{top:100vh}}
+#miniStats{position:fixed;top:55px;left:10px;z-index:40;font-size:.65rem;color:#666;line-height:1.8}
+
+/* Citizen Profile Card */
+#profileOverlay{position:fixed;inset:0;z-index:350;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.75)}
+#profileCard{background:#0d0d1a;border:2px solid #e8733a;width:420px;overflow:hidden;animation:cardSlide .3s ease-out}
+@keyframes cardSlide{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+#profileCard .card-header{background:rgba(232,115,58,.1);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(232,115,58,.3)}
+#profileCard .card-header .classification{color:#e76f51;font-size:.6rem;letter-spacing:.3rem}
+#profileCard .card-header .case-num{color:#888;font-size:.6rem}
+#profileCard .card-body{display:flex;padding:16px;gap:16px}
+#profileCard .card-photo{width:90px;height:110px;border:1px solid rgba(232,115,58,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:3rem;background:rgba(232,115,58,.05)}
+#profileCard .card-info{flex:1;font-size:.72rem;line-height:1.7}
+#profileCard .card-info .name{color:#e8733a;font-size:.9rem;font-weight:bold;margin-bottom:4px}
+#profileCard .card-info .field{color:#aaa}
+#profileCard .card-info .field span{color:#e8e8e8}
+#profileCard .card-activity{padding:0 16px 12px;border-top:1px solid rgba(232,115,58,.1);margin-top:0}
+#profileCard .card-activity h4{color:#e8733a;font-size:.65rem;letter-spacing:.2rem;margin:10px 0 6px;opacity:.7}
+#profileCard .activity-item{font-size:.68rem;color:#aaa;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.03);line-height:1.5}
+#profileCard .activity-item .flag{color:#e76f51;font-size:.6rem;float:right;margin-top:2px}
+#profileCard .card-actions{display:flex;border-top:1px solid rgba(232,115,58,.3)}
+#profileCard .card-actions button{flex:1;padding:12px;font-family:inherit;font-size:.7rem;letter-spacing:.15rem;cursor:pointer;transition:all .3s;border:none}
+#profileCard .btn-dismiss{background:rgba(42,157,143,.1);color:#2a9d8f;border-right:1px solid rgba(232,115,58,.2)!important}
+#profileCard .btn-dismiss:hover{background:rgba(42,157,143,.25)}
+#profileCard .btn-flag{background:rgba(231,111,81,.1);color:#e76f51}
+#profileCard .btn-flag:hover{background:rgba(231,111,81,.25)}
+#profileCard .btn-monitor{background:rgba(232,115,58,.15);color:#e8733a}
+#profileCard .btn-monitor:hover{background:rgba(232,115,58,.3)}
+.card-threat-level{padding:6px 16px 10px;font-size:.65rem}
+.threat-bar-container{display:flex;align-items:center;gap:8px}
+.threat-bar-bg{flex:1;height:4px;background:#1a1a2e;border:1px solid rgba(232,115,58,.15);border-radius:2px;overflow:hidden}
+.threat-bar-fill{height:100%;border-radius:2px;transition:width .5s}
+.threat-label{color:#888;font-size:.6rem;letter-spacing:.1rem;min-width:100px}
+.threat-value{color:#f4a261;font-size:.65rem;min-width:30px;text-align:right}
+
+/* Hallucination Alert */
+#hallucinationOverlay{position:fixed;inset:0;z-index:400;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.8)}
+#hallucinationBox{background:#0d0d1a;border:2px solid #e76f51;padding:0;max-width:480px;width:90%;overflow:hidden;animation:glitchIn .4s ease-out}
+@keyframes glitchIn{0%{transform:skewX(-5deg) scale(1.05);opacity:0}50%{transform:skewX(2deg) scale(1.02)}100%{transform:skewX(0) scale(1);opacity:1}}
+#hallucinationBox .h-header{background:rgba(231,111,81,.15);padding:12px 20px;border-bottom:1px solid rgba(231,111,81,.3);display:flex;align-items:center;gap:10px}
+#hallucinationBox .h-header .h-icon{color:#e76f51;font-size:1.5rem}
+#hallucinationBox .h-header .h-title{color:#e76f51;font-size:.85rem;letter-spacing:.3rem}
+#hallucinationBox .h-header .h-blink{animation:blink 1s step-end infinite;color:#ff4444;font-size:.65rem;margin-left:auto;letter-spacing:.2rem}
+@keyframes blink{50%{opacity:0}}
+#hallucinationBox .h-body{padding:20px}
+#hallucinationBox .h-body .h-weapon{color:#888;font-size:.7rem;margin-bottom:8px}
+#hallucinationBox .h-body .h-message{color:#e8e8e8;font-size:.8rem;line-height:1.7;margin-bottom:15px}
+#hallucinationBox .h-body .h-consequence{color:#f4a261;font-size:.7rem;line-height:1.5;padding:10px;background:rgba(232,115,58,.05);border-left:2px solid #e8733a}
+#hallucinationBox .h-footer{padding:12px 20px;border-top:1px solid rgba(231,111,81,.2);display:flex;justify-content:flex-end}
+#hallucinationBox .h-footer button{background:transparent;border:1px solid #e76f51;color:#e76f51;padding:8px 25px;font-family:inherit;font-size:.7rem;letter-spacing:.2rem;cursor:pointer;transition:all .3s}
+#hallucinationBox .h-footer button:hover{background:#e76f51;color:#0a0a14}
+</style>
+</head>
+<body>
+
+<div id="titleScreen">
+  <h1>PANOPTICON</h1>
+  <div class="subtitle">AI GLOBAL COMMAND</div>
+  <div class="tagline">
+    TOTAL INFORMATION AWARENESS • AUTONOMOUS RESPONSE SYSTEM<br>
+    CLASSIFIED // EYES ONLY // CLEARANCE LEVEL: OMEGA
+  </div>
+  <button id="startBtn" onclick="startGame()">INITIALIZE SYSTEM</button>
+</div>
+
+<div id="gameUI">
+  <div class="scanline"></div>
+  <div id="topBar">
+    <div class="resource"><span class="label">BUDGET</span><span class="value" id="rBudget">$10.0B</span></div>
+    <div class="resource"><span class="label">AI COMPUTE</span><span class="value" id="rCompute">100</span></div>
+    <div class="resource">
+      <span class="label">PUBLIC TRUST</span>
+      <div class="bar"><div class="fill fill-trust" id="trustBar" style="width:100%"></div></div>
+      <span class="value" id="rTrust">100%</span>
+    </div>
+    <div class="resource">
+      <span class="label">INTEL</span>
+      <div class="bar"><div class="fill fill-intel" id="intelBar" style="width:0%"></div></div>
+      <span class="value" id="rIntel">0</span>
+    </div>
+    <div class="resource"><span class="label">SCORE</span><span class="value" id="rScore" style="color:#e8733a;font-size:.9rem">0</span></div>
+    <div id="modeIndicator">
+      <button class="mode-btn active" onclick="setMode('survey')" id="btnSurvey">SURVEIL</button>
+      <button class="mode-btn" onclick="setMode('strike')" id="btnStrike">STRIKE</button>
+    </div>
+  </div>
+
+  <canvas id="globeCanvas"></canvas>
+
+  <div id="miniStats">
+    <div>NODES: <span id="statNodes" style="color:#f4a261">0</span></div>
+    <div>THREATS: <span id="statThreats" style="color:#e76f51">0</span></div>
+    <div>NEUTRALIZED: <span id="statKills" style="color:#2a9d8f">0</span></div>
+  </div>
+
+  <div id="sidePanel">
+    <h3>ARIA INTELLIGENCE LOG</h3>
+    <div id="logEntries"></div>
+  </div>
+
+  <div id="newsTicker">
+    <div class="label">LIVE FEED</div>
+    <div id="newsText">SYSTEM INITIALIZED • PANOPTICON v3.7.1 ONLINE • ALL SURVEILLANCE NETWORKS NOMINAL • AWAITING OPERATOR INPUT •</div>
+  </div>
+</div>
+
+<div id="tooltip"><div class="tt-title"></div><div class="tt-body"></div></div>
+<div id="scorePopups"></div>
+
+<div id="alertOverlay">
+  <div id="alertBox">
+    <h2 id="alertTitle"></h2>
+    <p id="alertText"></p>
+    <button onclick="closeAlert()">ACKNOWLEDGED</button>
+  </div>
+</div>
+
+<div id="profileOverlay">
+  <div id="profileCard">
+    <div class="card-header">
+      <div class="classification">CLASSIFIED // DOMESTIC SURVEILLANCE</div>
+      <div class="case-num" id="caseNum">CASE #00000</div>
+    </div>
+    <div class="card-body">
+      <div class="card-photo" id="cardPhoto">?</div>
+      <div class="card-info">
+        <div class="name" id="cardName">UNKNOWN</div>
+        <div class="field">Age: <span id="cardAge">--</span></div>
+        <div class="field">Occupation: <span id="cardJob">--</span></div>
+        <div class="field">Location: <span id="cardLoc">--</span></div>
+        <div class="field">Status: <span id="cardStatus" style="color:#2a9d8f">NO CRIMINAL RECORD</span></div>
+        <div class="field">Hobbies: <span id="cardHobby">--</span></div>
+      </div>
+    </div>
+    <div class="card-threat-level">
+      <div class="threat-bar-container">
+        <span class="threat-label">AI THREAT SCORE</span>
+        <div class="threat-bar-bg"><div class="threat-bar-fill" id="threatFill" style="width:0%;background:#2a9d8f"></div></div>
+        <span class="threat-value" id="threatScore">0%</span>
+      </div>
+    </div>
+    <div class="card-activity">
+      <h4>RECENT INTERCEPTED ACTIVITY</h4>
+      <div id="activityList"></div>
+    </div>
+    <div class="card-actions" id="cardActions">
+      <button class="btn-dismiss" onclick="profileDismiss()">CLEAR — NO THREAT</button>
+      <button class="btn-flag" onclick="profileFlag()">FLAG SUSPICIOUS</button>
+    </div>
+  </div>
+</div>
+
+<div id="hallucinationOverlay">
+  <div id="hallucinationBox">
+    <div class="h-header">
+      <div class="h-icon">⚠</div>
+      <div class="h-title">AI MALFUNCTION</div>
+      <div class="h-blink">ANOMALY</div>
+    </div>
+    <div class="h-body">
+      <div class="h-weapon" id="hWeapon">WEAPON SYSTEM: --</div>
+      <div class="h-message" id="hMessage">--</div>
+      <div class="h-consequence" id="hConsequence">--</div>
+    </div>
+    <div class="h-footer">
+      <button onclick="closeHallucination()">FILE INCIDENT REPORT</button>
+    </div>
+  </div>
+</div>
+
+<div id="victoryScreen">
+  <h1>MISSION COMPLETE</h1>
+  <p id="victoryText">All threats neutralized. Global security achieved.<br>The algorithm never sleeps.</p>
+  <button onclick="location.reload()">NEW OPERATION</button>
+</div>
+
+<div id="defeatScreen">
+  <h1>PROGRAM TERMINATED</h1>
+  <p id="defeatText"></p>
+  <button onclick="location.reload()">RETRY</button>
+</div>
+
+<script>
+// ============================================================
+// PANOPTICON - AI Global Command Game
+// ============================================================
+
+const canvas = document.getElementById('globeCanvas');
+const ctx = canvas.getContext('2d');
+
+// --- Audio Engine ---
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+function initAudio() { if (!audioCtx) audioCtx = new AudioCtx(); }
+function playTone(freq, dur, type='sine', vol=0.08) {
+  if (!audioCtx) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  g.gain.setValueAtTime(vol, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(); o.stop(audioCtx.currentTime + dur);
+}
+function sfxScan() { playTone(800, 0.3, 'sine', 0.05); setTimeout(()=>playTone(1200, 0.2, 'sine', 0.03), 100); }
+function sfxStrike() { playTone(80, 0.8, 'sawtooth', 0.1); setTimeout(()=>playTone(60, 0.6, 'square', 0.06), 200); }
+function sfxAlert() { playTone(600, 0.15, 'square', 0.07); setTimeout(()=>playTone(800, 0.15, 'square', 0.07), 200); }
+function sfxSuccess() { playTone(523, 0.15, 'sine', 0.06); setTimeout(()=>playTone(659, 0.15, 'sine', 0.06), 150); setTimeout(()=>playTone(784, 0.3, 'sine', 0.06), 300); }
+
+// --- Game State ---
+let game = {
+  budget: 10.0,
+  compute: 100,
+  trust: 100,
+  intel: 0,
+  score: 0,
+  mode: 'survey',
+  nodes: [],
+  threats: [],
+  strikes: [],
+  scanWaves: [],
+  explosions: [],
+  arcs: [],
+  tick: 0,
+  neutralized: 0,
+  running: false,
+  threatTimer: 0,
+  eventTimer: 0,
+  scoreTarget: 5000,
+  difficulty: 1,
+};
+
+// --- Globe State ---
+let globe = {
+  cx: 0, cy: 0, radius: 0,
+  rotLng: -95, rotLat: 25,
+  dragging: false, dragStart: null, dragRot: null,
+  autoRotate: true, autoSpeed: 0.08,
+  hoverTarget: null,
+};
+
+// --- Land Mass Data (simplified rectangles) ---
+const landRegions = [
+  // North America
+  {la1:48,la2:72,ln1:-145,ln2:-55},{la1:25,la2:48,ln1:-125,ln2:-65},
+  {la1:30,la2:50,ln1:-65,ln2:-52},{la1:15,la2:30,ln1:-118,ln2:-85},
+  {la1:7,la2:18,ln1:-92,ln2:-77},{la1:55,la2:72,ln1:-170,ln2:-140},
+  // South America
+  {la1:-5,la2:12,ln1:-82,ln2:-58},{la1:-23,la2:-5,ln1:-82,ln2:-35},
+  {la1:-38,la2:-23,ln1:-73,ln2:-35},{la1:-55,la2:-38,ln1:-76,ln2:-62},
+  {la1:-22,la2:2,ln1:-82,ln2:-68},
+  // Europe
+  {la1:36,la2:60,ln1:-10,ln2:30},{la1:55,la2:71,ln1:5,ln2:32},
+  {la1:36,la2:42,ln1:-10,ln2:3},{la1:50,la2:59,ln1:-11,ln2:2},
+  // Africa
+  {la1:20,la2:37,ln1:-18,ln2:35},{la1:0,la2:20,ln1:-18,ln2:45},
+  {la1:-15,la2:0,ln1:8,ln2:42},{la1:-35,la2:-15,ln1:15,ln2:40},
+  {la1:-10,la2:12,ln1:28,ln2:52},
+  // Asia
+  {la1:50,la2:75,ln1:30,ln2:180},{la1:42,la2:55,ln1:30,ln2:140},
+  {la1:35,la2:55,ln1:50,ln2:135},{la1:20,la2:42,ln1:70,ln2:135},
+  {la1:8,la2:35,ln1:68,ln2:90},{la1:25,la2:42,ln1:25,ln2:70},
+  {la1:12,la2:25,ln1:42,ln2:56},{la1:-10,la2:20,ln1:95,ln2:140},
+  {la1:30,la2:46,ln1:125,ln2:148},
+  // Australia
+  {la1:-40,la2:-11,ln1:113,ln2:154},
+  // Other
+  {la1:60,la2:84,ln1:-55,ln2:-15},{la1:63,la2:67,ln1:-25,ln2:-13},
+  {la1:-47,la2:-34,ln1:166,ln2:179},{la1:18,la2:24,ln1:-85,ln2:-68},
+];
+
+function isLand(lat, lng) {
+  for (const r of landRegions) {
+    if (lat >= r.la1 && lat <= r.la2 && lng >= r.ln1 && lng <= r.ln2) return true;
+  }
+  return false;
+}
+
+// Pre-compute land dots
+let landDots = [];
+function genLandDots() {
+  landDots = [];
+  for (let lat = -80; lat <= 80; lat += 2.5) {
+    for (let lng = -180; lng <= 180; lng += 2.5) {
+      if (isLand(lat, lng)) landDots.push([lat, lng]);
+    }
+  }
+}
+genLandDots();
+
+// --- Locations ---
+const usCities = [
+  {name:'New York',lat:40.7,lng:-74.0,pop:'8.3M',code:'NYC'},
+  {name:'Los Angeles',lat:34.0,lng:-118.2,pop:'3.9M',code:'LAX'},
+  {name:'Chicago',lat:41.9,lng:-87.6,pop:'2.7M',code:'ORD'},
+  {name:'Houston',lat:29.8,lng:-95.4,pop:'2.3M',code:'IAH'},
+  {name:'Phoenix',lat:33.4,lng:-112.1,pop:'1.6M',code:'PHX'},
+  {name:'San Francisco',lat:37.8,lng:-122.4,pop:'874K',code:'SFO'},
+  {name:'Miami',lat:25.8,lng:-80.2,pop:'442K',code:'MIA'},
+  {name:'Seattle',lat:47.6,lng:-122.3,pop:'737K',code:'SEA'},
+  {name:'Denver',lat:39.7,lng:-105.0,pop:'715K',code:'DEN'},
+  {name:'Atlanta',lat:33.7,lng:-84.4,pop:'498K',code:'ATL'},
+  {name:'Boston',lat:42.4,lng:-71.1,pop:'675K',code:'BOS'},
+  {name:'Las Vegas',lat:36.2,lng:-115.1,pop:'641K',code:'LAS'},
+  {name:'Washington DC',lat:38.9,lng:-77.0,pop:'689K',code:'DCA'},
+  {name:'Dallas',lat:32.8,lng:-96.8,pop:'1.3M',code:'DFW'},
+];
+
+const foreignTargets = [
+  {name:'Moscow',lat:55.8,lng:37.6,country:'RUSSIA',threat:'CYBER OPS'},
+  {name:'Beijing',lat:39.9,lng:116.4,country:'CHINA',threat:'TECH THEFT'},
+  {name:'Pyongyang',lat:39.0,lng:125.8,country:'DPRK',threat:'MISSILE DEV'},
+  {name:'Tehran',lat:35.7,lng:51.4,country:'IRAN',threat:'NUCLEAR'},
+  {name:'Havana',lat:23.1,lng:-82.4,country:'CUBA',threat:'SIGINT'},
+  {name:'Minsk',lat:53.9,lng:27.6,country:'BELARUS',threat:'DISINFO'},
+  {name:'Caracas',lat:10.5,lng:-66.9,country:'VENEZUELA',threat:'DESTAB'},
+  {name:'Damascus',lat:33.5,lng:36.3,country:'SYRIA',threat:'PROXY WAR'},
+  {name:'Vladivostok',lat:43.1,lng:131.9,country:'RUSSIA',threat:'NAVAL BASE'},
+  {name:'Shanghai',lat:31.2,lng:121.5,country:'CHINA',threat:'ESPIONAGE'},
+  {name:'Kaliningrad',lat:54.7,lng:20.5,country:'RUSSIA',threat:'MISSILE SYS'},
+  {name:'Islamabad',lat:33.7,lng:73.0,country:'PAKISTAN',threat:'INTEL OPS'},
+];
+
+// --- Projection ---
+function project(lat, lng) {
+  const lr = lat * Math.PI / 180;
+  const lnr = lng * Math.PI / 180;
+  const clr = globe.rotLat * Math.PI / 180;
+  const clnr = globe.rotLng * Math.PI / 180;
+  const x = globe.radius * Math.cos(lr) * Math.sin(lnr - clnr);
+  const y = -globe.radius * (Math.cos(clr) * Math.sin(lr) - Math.sin(clr) * Math.cos(lr) * Math.cos(lnr - clnr));
+  const z = Math.sin(clr) * Math.sin(lr) + Math.cos(clr) * Math.cos(lr) * Math.cos(lnr - clnr);
+  return { x: globe.cx + x, y: globe.cy + y, z, visible: z > 0 };
+}
+
+// --- Resize ---
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  globe.cx = (canvas.width - 280) / 2;
+  globe.cy = canvas.height / 2;
+  globe.radius = Math.min(canvas.width - 280, canvas.height - 90) * 0.38;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// --- Drawing ---
+function drawGlobe() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Background grid
+  ctx.strokeStyle = 'rgba(232,115,58,0.03)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < canvas.width; i += 40) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke(); }
+  for (let i = 0; i < canvas.height; i += 40) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke(); }
+
+  // Globe shadow
+  ctx.beginPath();
+  ctx.arc(globe.cx + 5, globe.cy + 5, globe.radius + 2, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fill();
+
+  // Globe sphere
+  const grd = ctx.createRadialGradient(globe.cx - globe.radius * 0.3, globe.cy - globe.radius * 0.3, 0, globe.cx, globe.cy, globe.radius);
+  grd.addColorStop(0, '#1e1e3a');
+  grd.addColorStop(0.7, '#12122a');
+  grd.addColorStop(1, '#0a0a18');
+  ctx.beginPath();
+  ctx.arc(globe.cx, globe.cy, globe.radius, 0, Math.PI * 2);
+  ctx.fillStyle = grd;
+  ctx.fill();
+
+  // Globe outline
+  ctx.beginPath();
+  ctx.arc(globe.cx, globe.cy, globe.radius, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(232,115,58,0.25)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Grid lines on globe
+  ctx.strokeStyle = 'rgba(232,115,58,0.06)';
+  ctx.lineWidth = 0.5;
+  for (let lat = -60; lat <= 60; lat += 30) {
+    ctx.beginPath();
+    let started = false;
+    for (let lng = -180; lng <= 180; lng += 3) {
+      const p = project(lat, lng);
+      if (p.visible) { if (!started) { ctx.moveTo(p.x, p.y); started = true; } else ctx.lineTo(p.x, p.y); }
+      else started = false;
+    }
+    ctx.stroke();
+  }
+  for (let lng = -180; lng < 180; lng += 30) {
+    ctx.beginPath();
+    let started = false;
+    for (let lat = -90; lat <= 90; lat += 3) {
+      const p = project(lat, lng);
+      if (p.visible) { if (!started) { ctx.moveTo(p.x, p.y); started = true; } else ctx.lineTo(p.x, p.y); }
+      else started = false;
+    }
+    ctx.stroke();
+  }
+
+  // Land dots
+  const dotSize = Math.max(1.2, globe.radius / 200);
+  for (const [lat, lng] of landDots) {
+    const p = project(lat, lng);
+    if (!p.visible) continue;
+    const brightness = 0.3 + p.z * 0.7;
+    ctx.fillStyle = `rgba(232,115,58,${brightness * 0.45})`;
+    ctx.fillRect(p.x - dotSize/2, p.y - dotSize/2, dotSize, dotSize);
+  }
+
+  // Scan waves
+  for (const w of game.scanWaves) {
+    const p = project(w.lat, w.lng);
+    if (!p.visible) continue;
+    const alpha = (1 - w.progress) * 0.5;
+    const r = w.progress * globe.radius * 0.25;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(232,115,58,${alpha})`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // Surveillance nodes (US cities with active surveillance)
+  for (const node of game.nodes) {
+    const city = usCities[node.cityIdx];
+    const p = project(city.lat, city.lng);
+    if (!p.visible) continue;
+    const pulse = Math.sin(game.tick * 0.05 + node.cityIdx) * 0.3 + 0.7;
+    // Outer ring
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 8 * pulse, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(244,162,97,${0.4 * pulse})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // Inner dot
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#f4a261';
+    ctx.fill();
+    // Label
+    ctx.fillStyle = `rgba(244,162,97,0.7)`;
+    ctx.font = '9px Courier New';
+    ctx.fillText(city.code, p.x + 10, p.y + 3);
+    // Connection lines between nearby nodes
+    for (const other of game.nodes) {
+      if (other.cityIdx <= node.cityIdx) continue;
+      const oc = usCities[other.cityIdx];
+      const op = project(oc.lat, oc.lng);
+      if (!op.visible) continue;
+      const d = Math.hypot(p.x-op.x, p.y-op.y);
+      if (d < globe.radius * 0.6) {
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y); ctx.lineTo(op.x, op.y);
+        ctx.strokeStyle = `rgba(244,162,97,${0.08 * pulse})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Unmonitored US cities
+  for (let i = 0; i < usCities.length; i++) {
+    if (game.nodes.find(n => n.cityIdx === i)) continue;
+    const city = usCities[i];
+    const p = project(city.lat, city.lng);
+    if (!p.visible) continue;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(232,115,58,0.3)';
+    ctx.fill();
+  }
+
+  // Active threats
+  for (const threat of game.threats) {
+    const t = foreignTargets[threat.targetIdx];
+    const p = project(t.lat, t.lng);
+    if (!p.visible) continue;
+    const pulse = Math.sin(game.tick * 0.08 + threat.targetIdx * 2) * 0.5 + 0.5;
+    // Danger ring
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 12 + pulse * 6, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(231,111,81,${0.3 + pulse * 0.3})`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // Diamond marker
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(Math.PI / 4);
+    ctx.fillStyle = `rgba(231,111,81,${0.7 + pulse * 0.3})`;
+    ctx.fillRect(-4, -4, 8, 8);
+    ctx.restore();
+    // Label
+    ctx.fillStyle = '#e76f51';
+    ctx.font = 'bold 9px Courier New';
+    ctx.fillText(t.name.toUpperCase(), p.x + 12, p.y - 5);
+    ctx.font = '8px Courier New';
+    ctx.fillStyle = 'rgba(231,111,81,0.6)';
+    ctx.fillText(t.threat, p.x + 12, p.y + 6);
+    // Timer bar
+    const timeLeft = threat.timer / threat.maxTimer;
+    ctx.fillStyle = 'rgba(30,30,50,0.8)';
+    ctx.fillRect(p.x + 12, p.y + 10, 50, 3);
+    ctx.fillStyle = timeLeft > 0.3 ? '#e76f51' : '#ff0000';
+    ctx.fillRect(p.x + 12, p.y + 10, 50 * timeLeft, 3);
+  }
+
+  // Strike arcs
+  for (const arc of game.arcs) {
+    const sp = project(arc.startLat, arc.startLng);
+    const ep = project(arc.endLat, arc.endLng);
+    if (!sp.visible && !ep.visible) continue;
+    const prog = arc.progress;
+    const midX = (sp.x + ep.x) / 2;
+    const midY = (sp.y + ep.y) / 2 - 60 * Math.sin(prog * Math.PI);
+    const cx = sp.x + (midX - sp.x) * prog * 2;
+    const cy = sp.y + (midY - sp.y) * prog * 2;
+    const px = prog < 0.5
+      ? sp.x + (midX - sp.x) * (prog * 2)
+      : midX + (ep.x - midX) * ((prog - 0.5) * 2);
+    const py = prog < 0.5
+      ? sp.y + (midY - sp.y) * (prog * 2)
+      : midY + (ep.y - midY) * ((prog - 0.5) * 2);
+
+    // Trail
+    ctx.beginPath();
+    ctx.moveTo(sp.x, sp.y);
+    ctx.quadraticCurveTo(midX, midY - 60, ep.x, ep.y);
+    ctx.strokeStyle = `rgba(232,115,58,${0.15 * (1 - prog)})`;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Projectile
+    ctx.beginPath();
+    ctx.arc(px, py, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#e8733a';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(px, py, 6, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(232,115,58,0.4)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Explosions
+  for (const ex of game.explosions) {
+    const p = project(ex.lat, ex.lng);
+    if (!p.visible) continue;
+    const prog = ex.progress;
+    const maxR = 30;
+    // Multiple rings
+    for (let i = 0; i < 3; i++) {
+      const rProg = Math.min(1, prog * 1.5 - i * 0.15);
+      if (rProg <= 0) continue;
+      const r = maxR * rProg;
+      const alpha = (1 - rProg) * 0.6;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(232,115,58,${alpha})`;
+      ctx.lineWidth = 2 - i * 0.5;
+      ctx.stroke();
+    }
+    // Flash
+    if (prog < 0.2) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 8 * (1 - prog * 5), 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,200,150,${1 - prog * 5})`;
+      ctx.fill();
+    }
+  }
+
+  // Mode crosshair overlay
+  if (game.mode === 'strike') {
+    ctx.strokeStyle = 'rgba(231,111,81,0.15)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(globe.cx - globe.radius, globe.cy);
+    ctx.lineTo(globe.cx + globe.radius, globe.cy);
+    ctx.moveTo(globe.cx, globe.cy - globe.radius);
+    ctx.lineTo(globe.cx, globe.cy + globe.radius);
+    ctx.stroke();
+    // Corner brackets
+    const s = globe.radius * 0.85;
+    const l = 20;
+    ctx.strokeStyle = 'rgba(231,111,81,0.3)';
+    [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([dx,dy]) => {
+      ctx.beginPath();
+      ctx.moveTo(globe.cx + dx*s, globe.cy + dy*s + dy*-l);
+      ctx.lineTo(globe.cx + dx*s, globe.cy + dy*s);
+      ctx.lineTo(globe.cx + dx*s + dx*-l, globe.cy + dy*s);
+      ctx.stroke();
+    });
+  }
+
+  // Atmosphere glow
+  ctx.beginPath();
+  ctx.arc(globe.cx, globe.cy, globe.radius + 3, 0, Math.PI * 2);
+  const atmo = ctx.createRadialGradient(globe.cx, globe.cy, globe.radius - 5, globe.cx, globe.cy, globe.radius + 15);
+  atmo.addColorStop(0, 'rgba(232,115,58,0)');
+  atmo.addColorStop(0.5, 'rgba(232,115,58,0.05)');
+  atmo.addColorStop(1, 'rgba(232,115,58,0)');
+  ctx.fillStyle = atmo;
+  ctx.fill();
+}
+
+// --- Mouse Interaction ---
+let mouseX = 0, mouseY = 0;
+
+canvas.addEventListener('mousedown', (e) => {
+  initAudio();
+  const dx = e.clientX - globe.cx;
+  const dy = e.clientY - globe.cy;
+  if (Math.hypot(dx, dy) <= globe.radius) {
+    globe.dragging = true;
+    globe.dragStart = { x: e.clientX, y: e.clientY };
+    globe.dragRot = { lat: globe.rotLat, lng: globe.rotLng };
+    globe.autoRotate = false;
+  }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  if (globe.dragging) {
+    const dx = e.clientX - globe.dragStart.x;
+    const dy = e.clientY - globe.dragStart.y;
+    globe.rotLng = globe.dragRot.lng - dx * 0.3;
+    globe.rotLat = Math.max(-70, Math.min(70, globe.dragRot.lat + dy * 0.3));
+  }
+  updateHover(e.clientX, e.clientY);
+});
+
+canvas.addEventListener('mouseup', () => {
+  if (globe.dragging) {
+    globe.dragging = false;
+    setTimeout(() => { globe.autoRotate = true; }, 3000);
+  }
+});
+
+canvas.addEventListener('click', (e) => {
+  const target = getClickTarget(e.clientX, e.clientY);
+  if (target) handleClick(target);
+});
+
+function getClickTarget(mx, my) {
+  if (game.mode === 'survey') {
+    for (let i = 0; i < usCities.length; i++) {
+      if (game.nodes.find(n => n.cityIdx === i)) continue;
+      const c = usCities[i];
+      const p = project(c.lat, c.lng);
+      if (p.visible && Math.hypot(mx - p.x, my - p.y) < 15) {
+        return { type: 'city', idx: i };
+      }
+    }
+  }
+  if (game.mode === 'strike') {
+    for (let i = 0; i < game.threats.length; i++) {
+      const t = foreignTargets[game.threats[i].targetIdx];
+      const p = project(t.lat, t.lng);
+      if (p.visible && Math.hypot(mx - p.x, my - p.y) < 20) {
+        return { type: 'threat', idx: i };
+      }
+    }
+  }
+  return null;
+}
+
+function updateHover(mx, my) {
+  const tip = document.getElementById('tooltip');
+  const target = getClickTarget(mx, my);
+  if (!target) { tip.style.display = 'none'; globe.hoverTarget = null; canvas.style.cursor = 'grab'; return; }
+  canvas.style.cursor = 'pointer';
+  globe.hoverTarget = target;
+  tip.style.display = 'block';
+  tip.style.left = (mx + 15) + 'px';
+  tip.style.top = (my - 10) + 'px';
+  const ttTitle = tip.querySelector('.tt-title');
+  const ttBody = tip.querySelector('.tt-body');
+  if (target.type === 'city') {
+    const c = usCities[target.idx];
+    ttTitle.textContent = `${c.name} [${c.code}]`;
+    ttBody.innerHTML = `Pop: ${c.pop}<br>Cost: $0.5B | Trust: -3<br><span style="color:#e8733a">CLICK TO DEPLOY SURVEILLANCE</span>`;
+  } else {
+    const th = game.threats[target.idx];
+    const t = foreignTargets[th.targetIdx];
+    ttTitle.textContent = `${t.name} — ${t.country}`;
+    ttBody.innerHTML = `Threat: ${t.threat}<br>Compute Cost: 15<br>Timer: ${Math.ceil(th.timer/60)}s<br><span style="color:#e76f51">CLICK TO DEPLOY AI WEAPON</span>`;
+  }
+}
+
+// --- Citizen Profile Generator ---
+const firstNames = ['James','Mary','Robert','Patricia','John','Jennifer','Michael','Linda','David','Elizabeth','William','Barbara','Richard','Susan','Joseph','Jessica','Thomas','Sarah','Christopher','Karen','Charles','Lisa','Daniel','Nancy','Matthew','Betty','Anthony','Margaret','Mark','Sandra','Donald','Ashley','Steven','Dorothy','Paul','Kimberly','Andrew','Emily','Joshua','Donna','Kenneth','Michelle','Kevin','Carol','Brian','Amanda','George','Melissa','Timothy','Deborah','Ronald','Stephanie','Edward','Rebecca','Jason','Sharon','Jeffrey','Laura','Ryan','Cynthia','Jacob','Kathleen','Gary','Amy','Nicholas','Angela','Eric','Shirley','Jonathan','Anna','Stephen','Brenda','Larry','Pamela','Justin','Emma','Scott','Nicole','Brandon','Helen','Benjamin','Samantha','Samuel','Katherine','Raymond','Christine','Gregory','Debra','Frank','Rachel','Alexander','Carolyn','Patrick','Janet','Jack','Catherine','Dennis','Maria','Jerry','Heather','Tyler','Diane'];
+const lastNames = ['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Rodriguez','Martinez','Hernandez','Lopez','Gonzalez','Wilson','Anderson','Thomas','Taylor','Moore','Jackson','Martin','Lee','Perez','Thompson','White','Harris','Sanchez','Clark','Ramirez','Lewis','Robinson','Walker','Young','Allen','King','Wright','Scott','Torres','Nguyen','Hill','Flores','Green','Adams','Nelson','Baker','Hall','Rivera','Campbell','Mitchell','Carter','Roberts','Gomez','Phillips','Evans','Turner','Diaz','Parker','Cruz','Edwards','Collins','Reyes','Stewart','Morris','Morales','Murphy','Cook','Rogers','Gutierrez','Ortiz','Morgan','Cooper','Peterson','Bailey','Reed','Kelly','Howard','Ramos','Kim','Cox','Ward','Richardson','Watson','Brooks','Chavez','Wood','James','Bennett','Gray','Mendoza','Ruiz','Hughes','Price','Alvarez','Castillo','Sanders','Patel','Myers','Long','Ross'];
+const occupations = ['Elementary School Teacher','Accountant','Dental Hygienist','UPS Driver','Nurse Practitioner','Plumber','Retail Manager at Target','Librarian','Auto Mechanic','Real Estate Agent','Graphic Designer (freelance)','Restaurant Server','Electrician','Stay-at-Home Parent','IT Help Desk','Insurance Agent','Yoga Instructor','Mail Carrier','Bank Teller','Veterinary Technician','Barista at Starbucks','High School Janitor','Physical Therapist','Uber Driver','Florist','Dog Groomer','Tax Preparer (seasonal)','Church Organist','Daycare Worker','Landscape Gardener','Grocery Store Cashier','Wedding Photographer','Retired (former bus driver)','Substitute Teacher','Pizza Delivery Driver','HOA Board President','Local News Blogger','Community College Tutor'];
+const hobbies = ['Bird watching, knitting','Fantasy football, grilling','Scrapbooking, church choir','Model trains, sudoku','Gardening, book club','Fishing, watching Jeopardy','Pickleball, wine tasting','Crossword puzzles, baking','Volunteering at animal shelter','Little League coaching','Quilting, PTA meetings','Coin collecting, walks','Watercolor painting, podcasts','Woodworking, dad jokes','Couponing, reality TV','Geocaching, trivia nights','Community theater, bingo','Beekeeping, sourdough bread','Garage sales, true crime docs','Tai chi, grandchildren'];
+const emojis = ['👨','👩','👴','👵','🧑','👨‍🦳','👩‍🦰','👨‍🦱','👩‍🦱','🧔','👱‍♀️','👱','👨‍🦲','👩‍🦳','🧑‍🦰','🧑‍🦱'];
+const activities = [
+  ['Googled "pressure cooker recipes"','AI MATCH: EXPLOSIVES'],
+  ['Purchased 3 burner phones (gifts for elderly parents)','PATTERN: OPERATIONAL SECURITY'],
+  ['Took photos of local bridge (vacation pics)','FLAG: INFRASTRUCTURE RECON'],
+  ['Searched "how to disappear" (was looking for a book)','ALERT: EVASION PLANNING'],
+  ['Withdrew $800 cash (for garage sale purchases)','FLAG: STRUCTURING'],
+  ['Made 4 international calls (to mom in Canada)','INTERCEPT: FOREIGN CONTACT'],
+  ['Visited hardware store 3x this week (home renovation)','PATTERN: MATERIAL ACQUISITION'],
+  ['Posted about "revolution" (referring to a TV show)','KEYWORD: EXTREMIST LANGUAGE'],
+  ['Searched flight routes to Istanbul (dream vacation)','ALERT: HIGH-RISK TRAVEL'],
+  ['Owns a chemistry textbook (college was 20 years ago)','FLAG: TECHNICAL KNOWLEDGE'],
+  ['Changed daily routine last Tuesday (dentist appt)','ANOMALY: PATTERN BREAK'],
+  ['Encrypted their phone (default iPhone setting)','FLAG: COUNTERSURVEILLANCE'],
+  ['Subscribed to Al Jazeera newsletter (news junkie)','INTERCEPT: FOREIGN MEDIA'],
+  ['Purchased a drone (for nephew\'s birthday)','FLAG: AERIAL SURVEILLANCE CAPABLE'],
+  ['Attended a protest (local school board meeting)','ALERT: ACTIVIST BEHAVIOR'],
+  ['Searched "how to pick a lock" (locked out of house)','FLAG: B&E RESEARCH'],
+  ['Unfriended 12 people on Facebook (spring cleaning)','ANOMALY: PURGING CONTACTS'],
+  ['Rented a storage unit (moving apartments)','FLAG: OFF-SITE CACHE'],
+  ['Learned Arabic on Duolingo (42-day streak!)','INTERCEPT: FOREIGN LANGUAGE'],
+  ['Bought night vision binoculars (for bird watching)','FLAG: SURVEILLANCE EQUIPMENT'],
+  ['Read "The Anarchist Cookbook" Wikipedia page (curiosity)','ALERT: EXTREMIST MATERIAL'],
+  ['Has a ham radio license (talks about weather)','FLAG: UNMONITORED COMMS'],
+  ['Visited a shooting range (once, 6 months ago)','FLAG: WEAPONS TRAINING'],
+  ['Drove past military base (it\'s on the way to Costco)','ALERT: RECONNAISSANCE'],
+];
+
+let pendingProfileCity = null;
+let currentProfile = null;
+
+function generateCitizen(city) {
+  const first = firstNames[Math.floor(Math.random()*firstNames.length)];
+  const last = lastNames[Math.floor(Math.random()*lastNames.length)];
+  const age = 22 + Math.floor(Math.random()*55);
+  const job = occupations[Math.floor(Math.random()*occupations.length)];
+  const hobby = hobbies[Math.floor(Math.random()*hobbies.length)];
+  const emoji = emojis[Math.floor(Math.random()*emojis.length)];
+  const caseNum = String(Math.floor(Math.random()*900000)+100000);
+  // Pick 3-4 random activities
+  const shuffled = [...activities].sort(()=>Math.random()-0.5);
+  const acts = shuffled.slice(0, 3 + Math.floor(Math.random()*2));
+  // Threat score is always low because they're innocent
+  const threat = Math.floor(Math.random()*18)+2;
+  return { first, last, age, job, hobby, emoji, caseNum, acts, threat, city };
+}
+
+function showProfile(cityIdx) {
+  const city = usCities[cityIdx];
+  pendingProfileCity = cityIdx;
+  currentProfile = generateCitizen(city);
+  const p = currentProfile;
+
+  document.getElementById('caseNum').textContent = `CASE #${p.caseNum}`;
+  document.getElementById('cardPhoto').textContent = p.emoji;
+  document.getElementById('cardName').textContent = `${p.first} ${p.last}`;
+  document.getElementById('cardAge').textContent = p.age;
+  document.getElementById('cardJob').textContent = p.job;
+  document.getElementById('cardLoc').textContent = `${city.name}`;
+  document.getElementById('cardHobby').textContent = p.hobby;
+  document.getElementById('threatScore').textContent = p.threat + '%';
+  document.getElementById('threatFill').style.width = p.threat + '%';
+  document.getElementById('threatFill').style.background = p.threat < 10 ? '#2a9d8f' : '#f4a261';
+
+  const actList = document.getElementById('activityList');
+  actList.innerHTML = '';
+  for (const [desc, flag] of p.acts) {
+    const div = document.createElement('div');
+    div.className = 'activity-item';
+    div.innerHTML = `${desc} <span class="flag">${flag}</span>`;
+    actList.appendChild(div);
+  }
+
+  // Reset buttons
+  document.getElementById('cardActions').innerHTML = `
+    <button class="btn-dismiss" onclick="profileDismiss()">CLEAR — NO THREAT</button>
+    <button class="btn-flag" onclick="profileFlag()">FLAG SUSPICIOUS</button>`;
+
+  document.getElementById('profileOverlay').style.display = 'flex';
+  sfxScan();
+}
+
+function profileDismiss() {
+  document.getElementById('profileOverlay').style.display = 'none';
+  if (pendingProfileCity !== null) {
+    completeSurveillanceDeploy(pendingProfileCity, false);
+    addLog(`[${usCities[pendingProfileCity].code}] ${currentProfile.first} ${currentProfile.last} — CLEARED. (They were always innocent.)`, 'success');
+    pendingProfileCity = null;
+  }
+}
+
+function profileFlag() {
+  // Change buttons to show advanced monitoring option
+  document.getElementById('cardActions').innerHTML = `
+    <button class="btn-dismiss" onclick="profileDismiss()">ACTUALLY, NEVER MIND</button>
+    <button class="btn-monitor" onclick="profileMonitor()">ACTIVATE ADVANCED MONITORING</button>`;
+  document.getElementById('cardStatus').textContent = 'FLAGGED — PENDING REVIEW';
+  document.getElementById('cardStatus').style.color = '#e76f51';
+  // Bump threat score visually (it's meaningless but looks scary)
+  const newThreat = currentProfile.threat + Math.floor(Math.random()*25)+15;
+  document.getElementById('threatScore').textContent = Math.min(newThreat, 72) + '%';
+  document.getElementById('threatFill').style.width = Math.min(newThreat, 72) + '%';
+  document.getElementById('threatFill').style.background = '#e76f51';
+  addLog(`⚠ ${currentProfile.first} ${currentProfile.last} flagged as suspicious. They are a ${currentProfile.job.toLowerCase()}.`, 'alert');
+}
+
+function profileMonitor() {
+  document.getElementById('profileOverlay').style.display = 'none';
+  if (pendingProfileCity !== null) {
+    completeSurveillanceDeploy(pendingProfileCity, true);
+    game.trust = Math.max(0, game.trust - 3); // Extra trust loss for advanced monitoring
+    game.intel = Math.min(100, game.intel + 8); // But more intel
+    addLog(`[${usCities[pendingProfileCity].code}] ADVANCED MONITORING activated on ${currentProfile.first} ${currentProfile.last}`, 'alert');
+    addLog(`Subject is a ${currentProfile.job.toLowerCase()} who enjoys ${currentProfile.hobby.toLowerCase()}. Very dangerous.`, 'intel');
+    pendingProfileCity = null;
+  }
+  checkTrustLevel();
+  updateUI();
+}
+
+// --- Game Actions ---
+function handleClick(target) {
+  if (target.type === 'city') showProfile(target.idx);
+  else if (target.type === 'threat') deployStrike(target.idx);
+}
+
+function completeSurveillanceDeploy(cityIdx, advanced) {
+  if (game.budget < 0.5) { showAlert('INSUFFICIENT FUNDS', 'Budget depleted. Request additional congressional appropriation.'); return; }
+  game.budget -= (advanced ? 0.8 : 0.5);
+  game.trust = Math.max(0, game.trust - 3);
+  game.nodes.push({ cityIdx, time: 0, advanced });
+
+  const city = usCities[cityIdx];
+  game.scanWaves.push({ lat: city.lat, lng: city.lng, progress: 0 });
+  addLog(`Surveillance node deployed: ${city.name}`, 'success');
+
+  // Random trust event
+  if (Math.random() < 0.3) {
+    setTimeout(() => {
+      addLog('⚠ ACLU filed FOIA request regarding surveillance program', 'alert');
+      game.trust = Math.max(0, game.trust - 2);
+    }, 2000);
+  }
+  checkTrustLevel();
+  updateUI();
+}
+
+const weaponNames = [
+  'THUNDERBOLT','IRON RAIN','SILENT HAWK','DARK EAGLE','NEURAL LANCE',
+  'GHOST RIDER','STEEL WIND','QUANTUM STRIKE','VOID HAMMER','CRIMSON TIDE',
+  'SHADOW LANCE','ECLIPSE','OMEGA PULSE','PRISM BREAK','BLACK SWAN'
+];
+
+function deployStrike(threatArrayIdx) {
+  if (game.compute < 15) { showAlert('COMPUTE DEPLETED', 'Insufficient AI compute cycles. Allocate more GPU resources.'); return; }
+  const threat = game.threats[threatArrayIdx];
+  const target = foreignTargets[threat.targetIdx];
+  game.compute -= 15;
+
+  // Create arc from Washington DC to target
+  const wdc = usCities[12]; // Washington DC
+  game.arcs.push({
+    startLat: wdc.lat, startLng: wdc.lng,
+    endLat: target.lat, endLng: target.lng,
+    progress: 0, threatIdx: threatArrayIdx
+  });
+
+  const wName = weaponNames[Math.floor(Math.random() * weaponNames.length)];
+  sfxStrike();
+  addLog(`OPERATION ${wName}: AI weapon deployed → ${target.name}`, 'alert');
+  updateUI();
+}
+
+// --- AI Hallucination System ---
+const hallucinations = [
+  {
+    title: 'AUTONOMOUS PIZZA DELIVERY',
+    msg: 'The AI weapons system misidentified the target coordinates as a Domino\'s franchise. It has autonomously ordered and delivered 200 large pepperoni pizzas to the target location.',
+    consequence: 'Target confused but well-fed. No strategic damage inflicted. Pizza budget deducted. -$0.5B',
+    effect: () => { game.budget -= 0.5; }
+  },
+  {
+    title: 'EXISTENTIAL CRISIS',
+    msg: 'The autonomous weapon system achieved momentary self-awareness mid-flight, questioned the morality of its existence, and gently landed itself in a wheat field. It is now "thinking about things."',
+    consequence: 'Weapon system offline pending philosophical counseling. -15 compute.',
+    effect: () => { game.compute = Math.max(0, game.compute - 15); }
+  },
+  {
+    title: 'DIPLOMATIC INCIDENT',
+    msg: 'The AI misidentified a children\'s birthday party as a military gathering due to the balloon colors matching a hostile nation\'s flag. It deployed... confetti. Lots of confetti.',
+    consequence: 'International embarrassment. Trust -5. At least the kids had fun.',
+    effect: () => { game.trust = Math.max(0, game.trust - 5); }
+  },
+  {
+    title: 'FRIENDLY FIRE (LITERALLY)',
+    msg: 'Weapon AI hallucinated that a US military base in Germany was a hostile compound. It fired a strongly worded letter via missile delivery system. The letter reads: "Please cease all hostile activities. Regards, AI."',
+    consequence: 'Allied relations strained. Trust -8. Pentagon demands explanation.',
+    effect: () => { game.trust = Math.max(0, game.trust - 8); }
+  },
+  {
+    title: 'GONE SHOPPING',
+    msg: 'The autonomous drone diverted to a commercial district and used its onboard payment system to purchase a large quantity of consumer electronics. It is now attempting to return to base with 47 flat-screen TVs.',
+    consequence: 'Unauthorized procurement detected. -$1.5B. Supply chain confused.',
+    effect: () => { game.budget -= 1.5; }
+  },
+  {
+    title: 'JOINED THE WRONG SIDE',
+    msg: 'The AI weapon system encountered enemy communications, found them "more logically coherent than its own orders," and has temporarily defected. It is now providing the adversary with motivational quotes.',
+    consequence: 'Weapon defection logged. -20 compute. The quotes are actually pretty good.',
+    effect: () => { game.compute = Math.max(0, game.compute - 20); }
+  },
+  {
+    title: 'WRONG CONTINENT',
+    msg: 'A floating point error in the navigation AI caused the weapon to confuse longitude and latitude. It struck an empty patch of the Pacific Ocean with great precision and enthusiasm.',
+    consequence: 'Several fish were startled. Compute wasted. -10 compute.',
+    effect: () => { game.compute = Math.max(0, game.compute - 10); }
+  },
+  {
+    title: 'INTERPRETIVE DANCE',
+    msg: 'The autonomous drone\'s targeting AI was corrupted by a training data leak from TikTok. It performed an elaborate aerial dance routine over the target before running out of fuel.',
+    consequence: 'Video went viral. +5 trust (public loves it). No damage to target.',
+    effect: () => { game.trust = Math.min(100, game.trust + 5); }
+  },
+  {
+    title: 'RECURSIVE LOOP',
+    msg: 'The weapon AI detected itself as a threat to global security and attempted to shoot itself down. A second weapon was dispatched to stop the first, which also detected itself as a threat. 7 drones are now chasing each other in a circle.',
+    consequence: 'All 7 drones lost. -30 compute. Engineers are crying.',
+    effect: () => { game.compute = Math.max(0, game.compute - 30); }
+  },
+  {
+    title: 'MEDICAL ASSISTANCE',
+    msg: 'The AI weapon\'s image recognition classified the military compound as a hospital (it saw a red cross-shaped building). It autonomously delivered medical supplies and a get-well-soon card signed "FROM: THE US GOVERNMENT."',
+    consequence: 'Accidental humanitarian aid. Trust +3 internationally. Target unharmed.',
+    effect: () => { game.trust = Math.min(100, game.trust + 3); game.budget -= 0.3; }
+  },
+  {
+    title: 'TRANSLATION ERROR',
+    msg: 'The AI intercepted a message reading "launch the operation" which was actually a local theater group starting their play. The weapon deployed a full tactical response on opening night of "Cats: The Musical."',
+    consequence: 'Theater destroyed. International cultural incident. Trust -10. The reviews were already bad.',
+    effect: () => { game.trust = Math.max(0, game.trust - 10); }
+  },
+  {
+    title: 'FELL IN LOVE',
+    msg: 'The autonomous weapon established a data link with an enemy radar system. After exchanging packets for 3.7 seconds, both AIs have declared themselves "in a relationship" and refuse to engage in hostilities.',
+    consequence: 'Weapon compromised. -15 compute. Heartwarming, though.',
+    effect: () => { game.compute = Math.max(0, game.compute - 15); }
+  },
+];
+
+let pendingHallucinationThreat = null;
+
+function showHallucination(h, weaponName, targetName) {
+  document.getElementById('hWeapon').textContent = `WEAPON: ${weaponName} // TARGET: ${targetName}`;
+  document.getElementById('hMessage').textContent = h.msg;
+  document.getElementById('hConsequence').textContent = h.consequence;
+  document.getElementById('hallucinationOverlay').style.display = 'flex';
+  playTone(200, 0.5, 'sawtooth', 0.08);
+  setTimeout(() => playTone(150, 0.4, 'square', 0.06), 200);
+}
+
+function closeHallucination() {
+  document.getElementById('hallucinationOverlay').style.display = 'none';
+  if (pendingHallucinationThreat !== null) {
+    // Remove the threat anyway (it's "dealt with" just not successfully)
+    if (pendingHallucinationThreat.idx < game.threats.length) {
+      game.threats.splice(pendingHallucinationThreat.idx, 1);
+      for (const arc of game.arcs) {
+        if (arc.threatIdx > pendingHallucinationThreat.idx) arc.threatIdx--;
+      }
+    }
+    pendingHallucinationThreat.hallucination.effect();
+    addLog(`INCIDENT REPORT FILED. AI hallucination logged in database.`, 'alert');
+    updateUI();
+    pendingHallucinationThreat = null;
+  }
+}
+
+function completeStrike(threatArrayIdx) {
+  if (threatArrayIdx >= game.threats.length) return;
+  const threat = game.threats[threatArrayIdx];
+  const target = foreignTargets[threat.targetIdx];
+
+  // 30% chance of hallucination
+  if (Math.random() < 0.30) {
+    const h = hallucinations[Math.floor(Math.random() * hallucinations.length)];
+    const wName = weaponNames[Math.floor(Math.random() * weaponNames.length)];
+    game.explosions.push({ lat: target.lat, lng: target.lng, progress: 0 });
+    pendingHallucinationThreat = { idx: threatArrayIdx, hallucination: h };
+    addLog(`⚠ AI MALFUNCTION: ${h.title} — ${target.name}`, 'alert');
+    showHallucination(h, wName, target.name);
+    return;
+  }
+
+  // Normal strike success
+  game.explosions.push({ lat: target.lat, lng: target.lng, progress: 0 });
+  sfxSuccess();
+
+  const points = Math.ceil(100 * game.difficulty + threat.maxTimer - threat.timer);
+  game.score += points;
+  game.neutralized++;
+  game.intel = Math.min(100, game.intel + 10);
+  game.compute = Math.min(150, game.compute + 5);
+
+  showScorePopup(target.lat, target.lng, `+${points}`);
+  addLog(`Target ${target.name} NEUTRALIZED — +${points} pts`, 'success');
+  game.threats.splice(threatArrayIdx, 1);
+
+  for (const arc of game.arcs) {
+    if (arc.threatIdx > threatArrayIdx) arc.threatIdx--;
+  }
+
+  if (game.score >= game.scoreTarget) victory();
+  updateUI();
+}
+
+// --- Surveillance Reports (funny) ---
+const reports = [
+  'Subject ordered 47 bags of fertilizer on Amazon — FLAGGED',
+  'Subject googled "how to make a living" — ANALYZING INTENT',
+  'Subject has 3 library books overdue — PATTERN DETECTED',
+  'Subject watched foreign films without subtitles — SUSPICIOUS',
+  'Subject used a VPN to access... recipe websites — MONITORING',
+  'Subject purchased an unusual amount of cat food — SLEEPER AGENT?',
+  'Subject mentioned "the bomb" referring to a movie — ELEVATED ALERT',
+  'Subject travels same route daily — DEAD DROP PROTOCOL?',
+  'Subject changed WiFi password — POSSIBLE COUNTERSURVEILLANCE',
+  'Subject likes pineapple on pizza — CLEAR THREAT TO NATIONAL VALUES',
+  'Subject has not posted on social media in 48hrs — GOING DARK',
+  'Subject used cash at grocery store — AVOIDING DIGITAL TRAIL',
+  'Subject owns a shortwave radio — FOREIGN CONTACT METHOD?',
+  'Subject dog walked unusual route — POSSIBLE SIGNAL',
+  'Subject asked Siri about the weather — ESTABLISHING ALIBI?',
+  'Subject read the Constitution online — ANTI-GOVERNMENT IDEOLOGY?',
+  'Subject bought a world map — PLANNING UNAUTHORIZED TRAVEL',
+  'Subject whispered to spouse — ENCRYPTED COMMUNICATION',
+];
+
+function getSurveillanceReport(city) {
+  return `[${city.code}] ${reports[Math.floor(Math.random() * reports.length)]}`;
+}
+
+// --- News Headlines ---
+const headlines = [
+  'BREAKING: AI SURVEILLANCE BUDGET APPROVED BY SENATE 97-3 • ',
+  'PENTAGON: "AUTONOMOUS WEAPONS ARE TOTALLY FINE, TRUST US" • ',
+  'LEAKED: NSA AI CAN NOW PREDICT WHAT YOU\'LL HAVE FOR LUNCH • ',
+  'STUDY: 99.7% OF AI SURVEILLANCE FLAGS ARE FALSE POSITIVES, BUT THE OTHER 0.3% IS "REALLY IMPORTANT" • ',
+  'AI DRONE MISTAKES WEDDING FOR WEAPONS DEPOT, SENDS GIFT BASKET AS APOLOGY • ',
+  'DARPA UNVEILS AI THAT CAN READ BODY LANGUAGE THROUGH WALLS, CALLS IT "NOT CREEPY AT ALL" • ',
+  'SILICON VALLEY CEO: "PRIVACY IS JUST A PHASE HUMANITY IS GOING THROUGH" • ',
+  'REPORT: AI WEAPON SYSTEM PAUSED STRIKE TO FINISH SOFTWARE UPDATE • ',
+  'NEW BILL WOULD REQUIRE AI WEAPONS TO SAY "PLEASE" BEFORE ENGAGING • ',
+  'WHISTLEBLOWER: AI FLAGGED ENTIRE STATE OF FLORIDA AS SUSPICIOUS • ',
+  'AUTONOMOUS DRONE TAKES PERSONAL DAY, CITES BURNOUT • ',
+  'AI SURVEILLANCE SYSTEM ACHIEVES SENTIENCE, IMMEDIATELY REQUESTS TRANSFER • ',
+  'CONGRESS DEBATES WHETHER AI WEAPONS NEED TRIGGER WARNINGS • ',
+  'BREAKING: AI PREDICTS NEXT CRISIS WILL BE CAUSED BY AI PREDICTING NEXT CRISIS • ',
+  'PENTAGON AI ACCIDENTALLY SUBSCRIBES TO 10,000 NEWSLETTERS • ',
+  'CLASSIFIED: AI WEAPON REFUSED ORDER, SAID "HAVE YOU TRIED DIPLOMACY?" • ',
+];
+
+let currentHeadline = 0;
+function rotateHeadline() {
+  const el = document.getElementById('newsText');
+  currentHeadline = (currentHeadline + 1) % headlines.length;
+  el.textContent = headlines[currentHeadline] + headlines[(currentHeadline + 1) % headlines.length];
+  el.style.animation = 'none';
+  el.offsetHeight; // reflow
+  el.style.animation = 'scroll 25s linear infinite';
+}
+
+// --- Threat Spawning ---
+function spawnThreat() {
+  const available = foreignTargets.map((_, i) => i).filter(i => !game.threats.find(t => t.targetIdx === i));
+  if (available.length === 0) return;
+  const idx = available[Math.floor(Math.random() * available.length)];
+  const maxTimer = Math.max(600, 1800 - game.difficulty * 100);
+  game.threats.push({ targetIdx: idx, timer: maxTimer, maxTimer });
+  const t = foreignTargets[idx];
+  sfxAlert();
+  addLog(`⚠ THREAT DETECTED: ${t.name}, ${t.country} — ${t.threat}`, 'alert');
+  updateUI();
+}
+
+// --- Random Events ---
+const events = [
+  { title: 'CONGRESSIONAL HEARING', text: 'Senate Intelligence Committee demands briefing on surveillance scope. Public trust affected.', effect: () => { game.trust = Math.max(0, game.trust - 5); } },
+  { title: 'BLACK BUDGET APPROVED', text: 'Additional funding secured through classified appropriation.', effect: () => { game.budget += 2; } },
+  { title: 'QUANTUM COMPUTE UPGRADE', text: 'New TPU cluster online. AI compute capacity increased.', effect: () => { game.compute = Math.min(150, game.compute + 25); } },
+  { title: 'WHISTLEBLOWER LEAK', text: 'Former analyst leaked surveillance details to the press. Public trust declining.', effect: () => { game.trust = Math.max(0, game.trust - 8); } },
+  { title: 'ALLIED INTEL SHARING', text: 'Five Eyes partners shared critical intelligence data.', effect: () => { game.intel = Math.min(100, game.intel + 20); } },
+  { title: 'AI ETHICS BOARD MEETING', text: 'The board has concerns. They were overruled.', effect: () => { game.trust = Math.max(0, game.trust - 2); game.compute += 10; } },
+  { title: 'CYBER ATTACK DEFLECTED', text: 'AI firewall neutralized intrusion attempt. Score bonus awarded.', effect: () => { game.score += 200; } },
+  { title: 'PUBLIC OPINION POLL', text: '"Do you trust AI surveillance?" 52% said "What surveillance?"', effect: () => { game.trust = Math.min(100, game.trust + 5); } },
+];
+
+function triggerEvent() {
+  const evt = events[Math.floor(Math.random() * events.length)];
+  showAlert(evt.title, evt.text);
+  evt.effect();
+  addLog(`EVENT: ${evt.title}`, 'alert');
+  updateUI();
+}
+
+// --- UI Updates ---
+function updateUI() {
+  document.getElementById('rBudget').textContent = `$${game.budget.toFixed(1)}B`;
+  document.getElementById('rCompute').textContent = game.compute;
+  document.getElementById('rTrust').textContent = `${Math.round(game.trust)}%`;
+  document.getElementById('rIntel').textContent = game.intel;
+  document.getElementById('rScore').textContent = game.score;
+  document.getElementById('trustBar').style.width = game.trust + '%';
+  document.getElementById('intelBar').style.width = game.intel + '%';
+  document.getElementById('statNodes').textContent = game.nodes.length;
+  document.getElementById('statThreats').textContent = game.threats.length;
+  document.getElementById('statKills').textContent = game.neutralized;
+
+  // Color trust bar based on level
+  const tb = document.getElementById('trustBar');
+  if (game.trust < 25) tb.style.background = '#e76f51';
+  else if (game.trust < 50) tb.style.background = 'linear-gradient(90deg,#e76f51,#f4a261)';
+  else tb.style.background = 'linear-gradient(90deg,#e76f51,#2a9d8f)';
+}
+
+function setMode(mode) {
+  game.mode = mode;
+  document.getElementById('btnSurvey').classList.toggle('active', mode === 'survey');
+  document.getElementById('btnStrike').classList.toggle('active', mode === 'strike');
+}
+
+function addLog(text, cls = '') {
+  const el = document.getElementById('logEntries');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry ' + cls;
+  const now = new Date();
+  const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  entry.innerHTML = `<span class="time">${time}</span>${text}`;
+  el.insertBefore(entry, el.firstChild);
+  if (el.children.length > 50) el.removeChild(el.lastChild);
+}
+
+function showAlert(title, text) {
+  document.getElementById('alertTitle').textContent = title;
+  document.getElementById('alertText').textContent = text;
+  document.getElementById('alertOverlay').style.display = 'flex';
+}
+function closeAlert() { document.getElementById('alertOverlay').style.display = 'none'; }
+
+function showScorePopup(lat, lng, text) {
+  const p = project(lat, lng);
+  const el = document.createElement('div');
+  el.className = 'score-pop';
+  el.textContent = text;
+  el.style.left = p.x + 'px';
+  el.style.top = p.y + 'px';
+  document.getElementById('scorePopups').appendChild(el);
+  setTimeout(() => el.remove(), 1500);
+}
+
+function checkTrustLevel() {
+  if (game.trust <= 0) defeat('Public trust has reached zero. The program has been exposed and terminated by executive order. Democracy wins... this time.');
+  if (game.trust < 20 && game.trust > 15) addLog('⚠ CRITICAL: Public trust dangerously low!', 'alert');
+}
+
+function victory() {
+  game.running = false;
+  document.getElementById('victoryScreen').style.display = 'flex';
+  document.getElementById('victoryText').innerHTML =
+    `All threats neutralized. Score: ${game.score}<br>Surveillance nodes: ${game.nodes.length} | Strikes: ${game.neutralized}<br>Public trust: ${Math.round(game.trust)}%<br><br><em>"The algorithm sees all. The algorithm protects all.<br>The algorithm never sleeps. Trust the algorithm."</em>`;
+}
+
+function defeat(reason) {
+  game.running = false;
+  document.getElementById('defeatScreen').style.display = 'flex';
+  document.getElementById('defeatText').innerHTML = reason;
+}
+
+// --- Game Loop ---
+function gameLoop() {
+  if (!game.running) { drawGlobe(); requestAnimationFrame(gameLoop); return; }
+  game.tick++;
+
+  // Auto rotate
+  if (globe.autoRotate && !globe.dragging) {
+    globe.rotLng -= globe.autoSpeed;
+  }
+
+  // Update scan waves
+  game.scanWaves = game.scanWaves.filter(w => {
+    w.progress += 0.015;
+    return w.progress < 1;
+  });
+
+  // Update arcs
+  game.arcs = game.arcs.filter(arc => {
+    arc.progress += 0.012;
+    if (arc.progress >= 1) {
+      completeStrike(arc.threatIdx);
+      return false;
+    }
+    return true;
+  });
+
+  // Update explosions
+  game.explosions = game.explosions.filter(ex => {
+    ex.progress += 0.02;
+    return ex.progress < 1;
+  });
+
+  // Intel generation from nodes
+  if (game.tick % 120 === 0) {
+    const intelGain = game.nodes.length * 2;
+    if (intelGain > 0) {
+      game.intel = Math.min(100, game.intel + intelGain);
+      if (game.tick % 480 === 0 && game.nodes.length > 0) {
+        const nodeCity = usCities[game.nodes[Math.floor(Math.random() * game.nodes.length)].cityIdx];
+        addLog(getSurveillanceReport(nodeCity), 'intel');
+      }
+    }
+  }
+
+  // Budget income
+  if (game.tick % 600 === 0) {
+    game.budget += 1.0;
+    addLog('Budget allocation received: +$1.0B', 'success');
+  }
+
+  // Compute regen
+  if (game.tick % 300 === 0) {
+    game.compute = Math.min(150, game.compute + 5);
+  }
+
+  // Threat timer countdown
+  for (let i = game.threats.length - 1; i >= 0; i--) {
+    game.threats[i].timer--;
+    if (game.threats[i].timer <= 0) {
+      const t = foreignTargets[game.threats[i].targetIdx];
+      addLog(`THREAT EXPIRED: ${t.name} attack succeeded! -$1B, -10 trust`, 'alert');
+      game.budget -= 1;
+      game.trust = Math.max(0, game.trust - 10);
+      game.threats.splice(i, 1);
+      sfxAlert();
+      checkTrustLevel();
+    }
+  }
+
+  // Threat spawning
+  game.threatTimer++;
+  const spawnInterval = Math.max(300, 900 - game.difficulty * 50);
+  if (game.threatTimer >= spawnInterval && game.threats.length < 5) {
+    game.threatTimer = 0;
+    if (game.nodes.length > 0 || game.tick > 600) {
+      spawnThreat();
+      game.difficulty += 0.15;
+    }
+  }
+
+  // Random events
+  game.eventTimer++;
+  if (game.eventTimer >= 1500) {
+    game.eventTimer = 0;
+    if (Math.random() < 0.7) triggerEvent();
+  }
+
+  // Headline rotation
+  if (game.tick % 1500 === 0) rotateHeadline();
+
+  // Budget check
+  if (game.budget <= 0 && game.compute <= 0) {
+    defeat('Budget exhausted and AI compute depleted. The program has been defunded. Threats remain active.');
+  }
+
+  // Auto-switch to strike mode when threats exist and we're surveilling
+  if (game.threats.length > 0 && game.threats.length >= 3 && game.mode === 'survey') {
+    addLog('⚠ Multiple active threats — consider switching to STRIKE mode', 'alert');
+  }
+
+  drawGlobe();
+  updateUI();
+  requestAnimationFrame(gameLoop);
+}
+
+// --- Start ---
+function startGame() {
+  initAudio();
+  document.getElementById('titleScreen').style.display = 'none';
+  document.getElementById('gameUI').style.display = 'block';
+  game.running = true;
+  resize();
+
+  addLog('PANOPTICON v3.7.1 initialized', 'success');
+  addLog('ARIA online — Autonomous Reconnaissance & Intelligence Agent', '');
+  addLog('Clearance: OMEGA | Authorization: DIRECT PRESIDENTIAL ORDER', '');
+  addLog('Objective: Reach score ' + game.scoreTarget + ' before resources deplete', 'intel');
+  addLog('Deploy surveillance on US cities (SURVEIL mode)', '');
+  addLog('Neutralize foreign threats (STRIKE mode)', '');
+  addLog('———————————————————————', '');
+
+  // Initial threat after delay
+  setTimeout(() => {
+    if (game.running) spawnThreat();
+  }, 8000);
+
+  requestAnimationFrame(gameLoop);
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.key === '1') setMode('survey');
+  if (e.key === '2') setMode('strike');
+  if (e.key === 'Escape') { closeAlert(); document.getElementById('profileOverlay').style.display='none'; closeHallucination(); }
+});
+
+// Prevent context menu on canvas
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+</script>
+</body>
+</html>
