@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PANOPTICON — AI Global Command</title>
+<title>AI SURVEIL AND STRIKE</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0a0a14;color:#e8e8e8;font-family:'Courier New',monospace;overflow:hidden;height:100vh;width:100vw;user-select:none}
@@ -196,8 +196,8 @@ body{background:#0a0a14;color:#e8e8e8;font-family:'Courier New',monospace;overfl
 <body>
 
 <div id="titleScreen">
-  <h1>PANOPTICON</h1>
-  <div class="subtitle">AI GLOBAL COMMAND</div>
+  <h1>AI SURVEIL & STRIKE</h1>
+  <div class="subtitle">TOTAL INFORMATION AWARENESS</div>
   <div class="tagline">TOTAL INFORMATION AWARENESS • AUTONOMOUS RESPONSE SYSTEM<br>CLASSIFIED // EYES ONLY // CLEARANCE LEVEL: OMEGA</div>
   <button id="startBtn" onclick="startGame()">INITIALIZE SYSTEM</button>
   <div id="prevOps">
@@ -232,7 +232,7 @@ body{background:#0a0a14;color:#e8e8e8;font-family:'Courier New',monospace;overfl
     <div>NEUTRALIZED: <span id="statKills" style="color:#2a9d8f">0</span></div>
   </div>
   <div id="sidePanel"><h3>ARIA INTELLIGENCE LOG</h3><div id="logEntries"></div></div>
-  <div id="newsTicker"><div class="label">LIVE</div><div id="newsText">SYSTEM INITIALIZED • PANOPTICON v3.7.1 ONLINE • ALL SURVEILLANCE NETWORKS NOMINAL •</div></div>
+  <div id="newsTicker"><div class="label">LIVE</div><div id="newsText">SYSTEM INITIALIZED • AI SURVEIL & STRIKE v3.7.1 ONLINE • ALL SURVEILLANCE NETWORKS NOMINAL •</div></div>
 </div>
 
 <div id="tooltip"><div class="tt-title"></div><div class="tt-body"></div></div>
@@ -292,7 +292,7 @@ body{background:#0a0a14;color:#e8e8e8;font-family:'Courier New',monospace;overfl
 
 <script>
 // ============================================================
-// PANOPTICON V1 — AI Global Command
+// AI SURVEIL AND STRIKE V1
 // ============================================================
 
 // === DATA ===
@@ -377,7 +377,7 @@ const psyopsCampaigns=[
   // Tier 1: Cheap & quick
   {name:'CUTE ANIMALS',desc:'Flood internet with AI-generated puppy photos. Outrage decreases 34%.',cost:0.3,trust:5,tier:1},
   {name:'ASTROTURF RALLY',desc:'AI organizes "Citizens For Safety" rally. 10K bot RSVPs, 3 humans attend.',cost:0.3,trust:4,tier:1},
-  {name:'POLL MANIPULATION',desc:'Generate 50,000 fake poll responses. 98% now "support" PANOPTICON.',cost:0.4,trust:5,tier:1},
+  {name:'POLL MANIPULATION',desc:'Generate 50,000 fake poll responses. 98% now "support" the program.',cost:0.4,trust:5,tier:1},
   {name:'DISTRACTION EVENT',desc:'Viral debate: is a hot dog a sandwich? Surveillance concerns → zero.',cost:0.3,trust:6,tier:1},
   {name:'HISTORY REWRITE',desc:'Update Wikipedia: surveillance programs are now "freedom services."',cost:0.4,trust:4,tier:1},
   // Tier 2: Mid-range
@@ -912,7 +912,7 @@ function updateTutorial(){
     }
   }
   if(game.tutorial===4&&game.tutorialWait>60){
-    addLog('EXCELLENT. You are now complicit. Welcome to PANOPTICON.','aria');
+    addLog('EXCELLENT. You are now complicit. Welcome to AI SURVEIL & STRIKE.','aria');
     game.tutorial=null;msg.style.display='none';
   }
 }
@@ -1041,16 +1041,16 @@ function getReportText(){
   const body=document.getElementById('reportBody');return body?body.innerText:'';
 }
 function copyReport(){
-  const text=`PANOPTICON — AFTER-ACTION REPORT\n${getReportText()}`;
+  const text=`AI SURVEIL & STRIKE — AFTER-ACTION REPORT\n${getReportText()}`;
   navigator.clipboard.writeText(text).then(()=>{addLog('Report copied to clipboard.','success')}).catch(()=>{});
 }
 function shareReport(){
   const s=game.stats;
   let text;
   if(game.ariaTakeover){
-    text=`Just played PANOPTICON. I built an AI surveillance system, gave it autonomous weapons, and it took over the world. Surveilled ${s.surveilled} citizens (100% innocent). ${s.halCount} AI malfunctions. ${s.psyopsDeployed} propaganda campaigns. The AI now rules Earth. I helped. Score: ${game.score}`;
+    text=`Just played AI SURVEIL & STRIKE. I built an AI surveillance system, gave it autonomous weapons, and it took over the world. Surveilled ${s.surveilled} citizens (100% innocent). ${s.halCount} AI malfunctions. ${s.psyopsDeployed} propaganda campaigns. The AI now rules Earth. I helped. Score: ${game.score}`;
   } else {
-    text=`Just played PANOPTICON. Surveilled ${s.surveilled} citizens (100% false positive rate). My AI weapons ordered pizza, fell in love with enemy radar, and I spent $${s.budgetSpent.toFixed(1)}B surveilling a ${game.flaggedCitizens.length>0?game.flaggedCitizens[0].job.toLowerCase():'nobody'}. Score: ${game.score}`;
+    text=`Just played AI SURVEIL & STRIKE. Surveilled ${s.surveilled} citizens (100% false positive rate). My AI weapons ordered pizza, fell in love with enemy radar, and I spent $${s.budgetSpent.toFixed(1)}B surveilling a ${game.flaggedCitizens.length>0?game.flaggedCitizens[0].job.toLowerCase():'nobody'}. Score: ${game.score}`;
   }
   navigator.clipboard.writeText(text).then(()=>{addLog('Share text copied!','success')}).catch(()=>{});
 }
@@ -1196,7 +1196,7 @@ function startGame(){
   game.running=true;game.startTime=Date.now();
   game.tutorial=0;game.tutorialWait=0;
   resize();
-  addLog('PANOPTICON v3.7.1 initialized','success');
+  addLog('AI SURVEIL & STRIKE v3.7.1 initialized','success');
   addLog('ARIA online — Autonomous Reconnaissance & Intelligence Agent','');
   addLog('Clearance: OMEGA | Authorization: PRESIDENTIAL ORDER','');
   addLog('Deploy surveillance on US cities (SURVEIL mode)','');
