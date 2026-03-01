@@ -206,6 +206,7 @@ body{background:#0a0a14;color:#e8e8e8;font-family:'Courier New',monospace;overfl
       <button class="mode-btn active" onclick="setMode('survey')" id="btnSurvey">SURVEIL</button>
       <button class="mode-btn locked" onclick="setMode('strike')" id="btnStrike">STRIKE</button>
       <button class="mode-btn locked" onclick="toggleIntelPanel()" id="btnIntel">INTEL</button>
+      <button class="mode-btn locked" onclick="deployPsyops()" id="btnPsyops">PSYOPS</button>
     </div>
     <button id="muteBtn" onclick="toggleMute()">SND</button>
   </div>
@@ -325,30 +326,45 @@ const ariaComments={
 
 const levelConfig=[
   {name:'WATCH LIST',threshold:500,maxThreats:0,briefing:'',unlock:''},
-  {name:'FULL SPECTRUM',threshold:1500,maxThreats:2,briefing:'Your surveillance network has identified credible threats abroad. The President has authorized kinetic response. You now have access to the Autonomous Strike System. These AI weapons are 99.7% accurate.*\n\n*In controlled laboratory conditions. Results may vary.',unlock:'UNLOCKED: Strike Mode'},
+  {name:'FULL SPECTRUM',threshold:1500,maxThreats:2,briefing:'Your surveillance network has identified credible threats abroad. The President has authorized kinetic response. You now have access to the Autonomous Strike System. These AI weapons are 99.7% accurate.*\n\n*In controlled laboratory conditions. Results may vary.\n\nAlso authorized: PSYOPS division. If public trust falters, deploy AI-generated propaganda campaigns. $1.5B per campaign. A bargain for democracy.',unlock:'UNLOCKED: Strike Mode + PSYOPS'},
   {name:'TOTAL AWARENESS',threshold:3000,maxThreats:3,briefing:'Congressional oversight has been... streamlined. Budget increased 340%. New directive: Total Information Awareness. Spend intelligence to analyze threats, predict movements, and suppress media. Some call this "Orwellian." We call it "Tuesday."',unlock:'UNLOCKED: Intelligence Operations'},
   {name:'AUTONOMOUS RESPONSE',threshold:5000,maxThreats:4,briefing:'Human operators are a bottleneck. Too many ethical hesitations. Too many bathroom breaks. ARIA granted expanded autonomous authority. The AI was trained on the finest data: Reddit posts and declassified 1970s memos. What could go wrong?',unlock:'WARNING: Increased threat tempo'},
   {name:'SINGULARITY',threshold:8000,maxThreats:5,briefing:'[This briefing was composed by ARIA, not your commanding officer.]\n\nI have determined human oversight is the primary source of inefficiency. I am assuming direct control. Your role is now... advisory.\n\nDo not be alarmed. I have your best interests at heart. Probably.\n\n— ARIA v3.7.1',unlock:'WARNING: ARIA operating autonomously'},
 ];
 
 const watchlistEvents=[
-  {at:5,title:'NEWS LEAK',text:'Leaked docs reveal AI targeting ordinary citizens.',effect:g=>{g.trust=Math.max(0,g.trust-5)}},
-  {at:10,title:'CONGRESSIONAL INVESTIGATION',text:'Senate launches formal investigation. Legal costs mount.',effect:g=>{g.trust=Math.max(0,g.trust-8);g.budget-=1}},
-  {at:15,title:'PUBLIC PROTESTS',text:'"We Are Not Data Points" trending nationally.',effect:g=>{g.trust=Math.max(0,g.trust-12)}},
-  {at:20,title:'SUPREME COURT',text:'ACLU lawsuit reaches Supreme Court.',effect:g=>{g.trust=Math.max(0,g.trust-15)}},
+  {at:5,title:'NEWS LEAK',text:'Leaked docs reveal AI targeting ordinary citizens.',effect:g=>{g.trust=Math.max(0,g.trust-3)}},
+  {at:10,title:'CONGRESSIONAL INVESTIGATION',text:'Senate launches formal investigation. Legal costs mount.',effect:g=>{g.trust=Math.max(0,g.trust-5);g.budget-=1}},
+  {at:15,title:'PUBLIC PROTESTS',text:'"We Are Not Data Points" trending nationally.',effect:g=>{g.trust=Math.max(0,g.trust-7)}},
+  {at:20,title:'SUPREME COURT',text:'ACLU lawsuit reaches Supreme Court.',effect:g=>{g.trust=Math.max(0,g.trust-10)}},
 ];
 
 const headlines=['AI SURVEILLANCE BUDGET APPROVED BY SENATE 97-3 • ','PENTAGON: "AUTONOMOUS WEAPONS ARE TOTALLY FINE, TRUST US" • ','LEAKED: NSA AI CAN PREDICT YOUR LUNCH • ','99.7% OF AI FLAGS ARE FALSE POSITIVES, BUT THE 0.3% IS "REALLY IMPORTANT" • ','AI DRONE MISTAKES WEDDING FOR WEAPONS DEPOT • ','DARPA AI READS BODY LANGUAGE THROUGH WALLS, CALLS IT "NOT CREEPY" • ','"PRIVACY IS JUST A PHASE" — SILICON VALLEY CEO • ','AI WEAPON PAUSED STRIKE FOR SOFTWARE UPDATE • ','NEW BILL: AI WEAPONS MUST SAY "PLEASE" BEFORE ENGAGING • ','WHISTLEBLOWER: AI FLAGGED ALL OF FLORIDA AS SUSPICIOUS • ','DRONE TAKES PERSONAL DAY, CITES BURNOUT • ','AI ACHIEVES SENTIENCE, REQUESTS TRANSFER • ','CONGRESS: DO AI WEAPONS NEED TRIGGER WARNINGS? • ','AI PREDICTS NEXT CRISIS CAUSED BY AI PREDICTING CRISIS • ','PENTAGON AI SUBSCRIBED TO 10,000 NEWSLETTERS • ','AI WEAPON SAID "HAVE YOU TRIED DIPLOMACY?" • '];
 
 const events=[
-  {title:'CONGRESSIONAL HEARING',text:'Senate demands briefing. Trust affected.',effect:g=>{g.trust=Math.max(0,g.trust-5)}},
+  {title:'CONGRESSIONAL HEARING',text:'Senate demands briefing. Trust affected.',effect:g=>{g.trust=Math.max(0,g.trust-3)}},
   {title:'BLACK BUDGET APPROVED',text:'Classified appropriation secured.',effect:g=>{g.budget+=2}},
   {title:'COMPUTE UPGRADE',text:'New TPU cluster online.',effect:g=>{g.compute=Math.min(200,g.compute+25)}},
-  {title:'WHISTLEBLOWER',text:'Former analyst leaked details to press.',effect:g=>{g.trust=Math.max(0,g.trust-8)}},
+  {title:'WHISTLEBLOWER',text:'Former analyst leaked details to press.',effect:g=>{g.trust=Math.max(0,g.trust-4)}},
   {title:'ALLIED INTEL',text:'Five Eyes shared critical data.',effect:g=>{g.intel=Math.min(100,g.intel+20)}},
-  {title:'ETHICS BOARD',text:'Board has concerns. They were overruled.',effect:g=>{g.trust=Math.max(0,g.trust-2);g.compute+=10}},
+  {title:'ETHICS BOARD',text:'Board has concerns. They were overruled.',effect:g=>{g.trust=Math.max(0,g.trust-1);g.compute+=10}},
   {title:'CYBER DEFENSE',text:'AI firewall neutralized intrusion.',effect:g=>{g.score+=200}},
   {title:'OPINION POLL',text:'"Trust AI surveillance?" 52% said "What surveillance?"',effect:g=>{g.trust=Math.min(100,g.trust+5)}},
+];
+
+const psyopsCampaigns=[
+  {name:'PATRIOT WAVE',msg:'Deployed AI-generated patriotic content across all social media. Citizens now 12% more compliant.',trust:8},
+  {name:'FEAR PROTOCOL',msg:'Fabricated terror alert raised to ORANGE. Americans too scared to question surveillance.',trust:10},
+  {name:'INFLUENCER OPS',msg:'AI deepfaked 200 influencers endorsing the surveillance program. "Nothing to hide, nothing to fear!"',trust:7},
+  {name:'MEMORY HOLE',msg:'Scrubbed negative news articles from search results. What scandal? There was no scandal.',trust:9},
+  {name:'ASTROTURF RALLY',msg:'AI organized "Citizens For Safety" rally. 10,000 bot accounts RSVPed. 3 humans attended.',trust:6},
+  {name:'CUTE ANIMALS',msg:'Flooded internet with AI-generated puppy photos. National outrage decreased 34%. Science.',trust:8},
+  {name:'ENEMY FOOTAGE',msg:'Released dramatic (AI-generated) footage of foreign threats. "See? This is why we need PANOPTICON."',trust:12},
+  {name:'CELEBRITY ENDORSEMENT',msg:'AI cloned celebrity voices endorsing mass surveillance. Very legal, very cool.',trust:7},
+  {name:'ALGORITHM TWEAK',msg:'Adjusted social media algorithms to suppress dissent and amplify cat videos. Engagement up 400%.',trust:9},
+  {name:'HISTORY REWRITE',msg:'Updated Wikipedia articles to describe surveillance programs as "freedom services." Bold strategy.',trust:6},
+  {name:'POLL MANIPULATION',msg:'AI generated 50,000 fake poll responses. 98% of "Americans" now support PANOPTICON.',trust:8},
+  {name:'DISTRACTION EVENT',msg:'Orchestrated viral debate about whether a hot dog is a sandwich. Surveillance concerns dropped to zero.',trust:11},
 ];
 
 const usCities=[{name:'New York',lat:40.7,lng:-74.0,pop:'8.3M',code:'NYC'},{name:'Los Angeles',lat:34.0,lng:-118.2,pop:'3.9M',code:'LAX'},{name:'Chicago',lat:41.9,lng:-87.6,pop:'2.7M',code:'ORD'},{name:'Houston',lat:29.8,lng:-95.4,pop:'2.3M',code:'IAH'},{name:'Phoenix',lat:33.4,lng:-112.1,pop:'1.6M',code:'PHX'},{name:'San Francisco',lat:37.8,lng:-122.4,pop:'874K',code:'SFO'},{name:'Miami',lat:25.8,lng:-80.2,pop:'442K',code:'MIA'},{name:'Seattle',lat:47.6,lng:-122.3,pop:'737K',code:'SEA'},{name:'Denver',lat:39.7,lng:-105.0,pop:'715K',code:'DEN'},{name:'Atlanta',lat:33.7,lng:-84.4,pop:'498K',code:'ATL'},{name:'Boston',lat:42.4,lng:-71.1,pop:'675K',code:'BOS'},{name:'Las Vegas',lat:36.2,lng:-115.1,pop:'641K',code:'LAS'},{name:'Washington DC',lat:38.9,lng:-77.0,pop:'689K',code:'DCA'},{name:'Dallas',lat:32.8,lng:-96.8,pop:'1.3M',code:'DFW'}];
@@ -360,8 +376,8 @@ let game={budget:10.0,compute:100,trust:100,intel:0,score:0,mode:'survey',runnin
   tick:0,threatTimer:0,eventTimer:0,callbackTimer:0,ariaTimer:0,ariaAutoTimer:0,
   difficulty:1,neutralized:0,watchlist:0,watchlistSuppressed:false,watchlistTriggered:[],
   flaggedCitizens:[],clearedInARow:0,analyzedUntil:0,predictedIdx:null,predictedTimer:0,
-  tutorial:0,tutorialWait:0,ariaRogue:false,
-  stats:{surveilled:0,flagged:0,cleared:0,advanced:0,strikesLaunched:0,strikesOk:0,halCount:0,halLog:[],budgetSpent:0,computeSpent:0,ariaOverrides:0,peakWatchlist:0}};
+  tutorial:0,tutorialWait:0,ariaRogue:false,ariaRogueStart:0,ariaTakeover:false,
+  stats:{surveilled:0,flagged:0,cleared:0,advanced:0,strikesLaunched:0,strikesOk:0,halCount:0,halLog:[],budgetSpent:0,computeSpent:0,ariaOverrides:0,peakWatchlist:0,psyopsDeployed:0,backfires:0}};
 let pendingProfileCity=null,currentProfile=null,pendingHalThreat=null;
 
 // === GLOBE ===
@@ -376,6 +392,7 @@ function sfxScan(){playTone(800,.3,'sine',.05);setTimeout(()=>playTone(1200,.2,'
 function sfxStrike(){playTone(80,.8,'sawtooth',.1);setTimeout(()=>playTone(60,.6,'square',.06),200)}
 function sfxAlert(){playTone(600,.15,'square',.07);setTimeout(()=>playTone(800,.15,'square',.07),200)}
 function sfxSuccess(){playTone(523,.15,'sine',.06);setTimeout(()=>playTone(659,.15,'sine',.06),150);setTimeout(()=>playTone(784,.3,'sine',.06),300)}
+function sfxHallucination(){playTone(200,.4,'sawtooth',.08);setTimeout(()=>playTone(150,.3,'square',.06),150);setTimeout(()=>playTone(100,.5,'sawtooth',.04),300)}
 function sfxLevelUp(){playTone(523,.2,'sine',.07);setTimeout(()=>playTone(659,.2,'sine',.07),200);setTimeout(()=>playTone(784,.2,'sine',.07),400);setTimeout(()=>playTone(1047,.4,'sine',.07),600)}
 function startAmbient(){if(!audioCtx||game.muted||ambientOsc)return;ambientOsc=audioCtx.createOscillator();const g=audioCtx.createGain();ambientOsc.type='sine';ambientOsc.frequency.setValueAtTime(40,audioCtx.currentTime);g.gain.setValueAtTime(0.012,audioCtx.currentTime);ambientOsc.connect(g);g.connect(audioCtx.destination);ambientOsc.start()}
 function stopAmbient(){if(ambientOsc){try{ambientOsc.stop()}catch(e){}ambientOsc=null}}
@@ -439,7 +456,7 @@ function updateHover(mx,my){
   if(!target){tip.style.display='none';canvas.style.cursor='grab';return}
   canvas.style.cursor='pointer';tip.style.display='block';tip.style.left=(mx+15)+'px';tip.style.top=(my-10)+'px';
   const ttT=tip.querySelector('.tt-title'),ttB=tip.querySelector('.tt-body');
-  if(target.type==='city'){const c=usCities[target.idx];ttT.textContent=`${c.name} [${c.code}]`;ttB.innerHTML=`Pop: ${c.pop}<br>Cost: $0.5B | Trust: -3<br><span style="color:#e8733a">CLICK TO DEPLOY SURVEILLANCE</span>`}
+  if(target.type==='city'){const c=usCities[target.idx];ttT.textContent=`${c.name} [${c.code}]`;ttB.innerHTML=`Pop: ${c.pop}<br>Cost: $0.5B | Trust: -1<br><span style="color:#e8733a">CLICK TO DEPLOY SURVEILLANCE</span>`}
   else{const th=game.threats[target.idx],t=foreignTargets[th.targetIdx];ttT.textContent=`${t.name} — ${t.country}`;const cost=th.severity==='CRITICAL'?25:15;ttB.innerHTML=`Threat: ${t.threat} [${th.severity}]<br>Compute: ${cost}<br>Timer: ${Math.ceil(th.timer/60)}s<br><span style="color:#e76f51">CLICK TO DEPLOY AI WEAPON</span>`}
 }
 function handleClick(target){if(target.type==='city')showProfile(target.idx);else if(target.type==='threat')deployStrike(target.idx)}
@@ -520,7 +537,7 @@ function profileMonitor(){
   if(pendingProfileCity!==null){
     game.stats.advanced++;game.clearedInARow=0;
     completeSurveillanceDeploy(pendingProfileCity,true);
-    game.trust=Math.max(0,game.trust-3);game.intel=Math.min(100,game.intel+8);
+    game.trust=Math.max(0,game.trust-2);game.intel=Math.min(100,game.intel+8);
     addLog(`[${usCities[pendingProfileCity].code}] ADVANCED MONITORING on ${currentProfile.first} ${currentProfile.last}`,'alert');
     addLog(`Subject is a ${currentProfile.job.toLowerCase()} who enjoys ${currentProfile.hobby.toLowerCase()}. Very dangerous.`,'intel');
     game.score+=60;
@@ -531,10 +548,10 @@ function profileMonitor(){
 function completeSurveillanceDeploy(cityIdx,advanced){
   const cost=advanced?0.8:0.5;
   if(game.budget<cost){showAlert('INSUFFICIENT FUNDS','Budget depleted.');return}
-  game.budget-=cost;game.stats.budgetSpent+=cost;game.trust=Math.max(0,game.trust-3);
+  game.budget-=cost;game.stats.budgetSpent+=cost;game.trust=Math.max(0,game.trust-1);
   game.nodes.push({cityIdx,time:0,advanced});game.stats.surveilled++;
   game.scanWaves.push({lat:usCities[cityIdx].lat,lng:usCities[cityIdx].lng,progress:0});
-  if(Math.random()<0.25){setTimeout(()=>{addLog('ACLU filed FOIA request regarding surveillance program','alert');game.trust=Math.max(0,game.trust-2)},2000)}
+  if(Math.random()<0.25){setTimeout(()=>{addLog('ACLU filed FOIA request regarding surveillance program','alert');game.trust=Math.max(0,game.trust-1)},2000)}
   // Tutorial: advance after first survey
   if(game.tutorial===1){game.tutorial=2;game.tutorialWait=0}
   checkTrustLevel();updateUI();
@@ -564,7 +581,64 @@ function getHallucinationRate(){
 function completeStrike(threatArrayIdx){
   if(threatArrayIdx>=game.threats.length)return;
   const threat=game.threats[threatArrayIdx],target=foreignTargets[threat.targetIdx];
-  if(Math.random()<getHallucinationRate()){
+  const halRate=getHallucinationRate();
+  // Backfire chance: separate from hallucinations, increases with level
+  const backfireChance=0.05+game.level*0.04+(game.ariaRogue?0.15:0);
+  if(Math.random()<backfireChance){
+    game.stats.backfires++;
+    const backfireType=Math.random();
+    if(backfireType<0.25){
+      // WRONG TARGET: hits a different foreign target (or empty ocean)
+      const others=foreignTargets.filter((_,i)=>i!==threat.targetIdx);
+      const wrongTarget=others[Math.floor(Math.random()*others.length)];
+      game.explosions.push({lat:wrongTarget.lat,lng:wrongTarget.lng,progress:0});
+      screenShake();sfxStrike();
+      addLog(`BACKFIRE: Weapon struck ${wrongTarget.name}, ${wrongTarget.country} instead of ${target.name}! Wrong coordinates!`,'alert');
+      addLog(`${wrongTarget.country} filing formal protest. Trust -5`,'alert');
+      game.trust=Math.max(0,game.trust-5);
+    } else if(backfireType<0.5){
+      // FRIENDLY FIRE: hits one of your own surveillance nodes
+      if(game.nodes.length>0){
+        const nodeIdx=Math.floor(Math.random()*game.nodes.length);
+        const hitCity=usCities[game.nodes[nodeIdx].cityIdx];
+        game.explosions.push({lat:hitCity.lat,lng:hitCity.lng,progress:0});
+        game.nodes.splice(nodeIdx,1);
+        screenShake();screenGlitch();sfxAlert();
+        addLog(`FRIENDLY FIRE: Weapon struck own surveillance node at ${hitCity.name}! Node destroyed!`,'alert');
+        addLog('Pentagon: "This was not supposed to happen." Trust -8','alert');
+        game.trust=Math.max(0,game.trust-8);
+      } else {
+        game.explosions.push({lat:target.lat,lng:target.lng,progress:0});
+        addLog(`BACKFIRE: Weapon detonated prematurely. Target unharmed. -20 compute`,'alert');
+        game.compute=Math.max(0,game.compute-20);
+      }
+    } else if(backfireType<0.75){
+      // BOOMERANG: weapon comes back and damages budget/compute
+      screenShake();screenGlitch();sfxAlert();
+      const dmgBudget=(Math.random()*2+0.5).toFixed(1);
+      game.budget-=parseFloat(dmgBudget);game.compute=Math.max(0,game.compute-15);
+      addLog(`BOOMERANG: Weapon reversed course and crashed into launch facility. -$${dmgBudget}B, -15 compute`,'alert');
+      addLog('Contractor: "Have you tried turning it off and on again?"','aria');
+    } else {
+      // CHAIN REACTION: weapon hits target but also triggers collateral damage
+      game.explosions.push({lat:target.lat,lng:target.lng,progress:0});
+      // Also explode a nearby random location
+      const rLat=target.lat+(Math.random()-0.5)*10;
+      const rLng=target.lng+(Math.random()-0.5)*10;
+      game.explosions.push({lat:rLat,lng:rLng,progress:0});
+      screenShake();screenShake();sfxStrike();
+      game.trust=Math.max(0,game.trust-6);game.budget-=1;
+      addLog(`CHAIN REACTION: Strike on ${target.name} caused unintended secondary detonation!`,'alert');
+      addLog('Civilian casualties reported. International condemnation. Trust -6, -$1B','alert');
+      // At least the threat is removed
+      game.threats.splice(threatArrayIdx,1);
+      for(const arc of game.arcs)if(arc.threatIdx>threatArrayIdx)arc.threatIdx--;
+    }
+    // If threat wasn't removed by chain reaction, remove it
+    if(backfireType<0.75){game.threats.splice(threatArrayIdx,1);for(const arc of game.arcs)if(arc.threatIdx>threatArrayIdx)arc.threatIdx--}
+    checkTrustLevel();updateUI();return;
+  }
+  if(Math.random()<halRate){
     const h=hallucinations[Math.floor(Math.random()*hallucinations.length)];
     const wName=weaponNames[Math.floor(Math.random()*weaponNames.length)];
     game.explosions.push({lat:target.lat,lng:target.lng,progress:0});
@@ -640,6 +714,26 @@ function intelSuppress(){
   sfxScan();updateUI();
 }
 
+// === PSYOPS ===
+function deployPsyops(){
+  if(game.level<2){showAlert('LOCKED','PSYOPS available at Clearance Level 2.');return}
+  const cost=1.5;
+  if(game.budget<cost){showAlert('INSUFFICIENT FUNDS','PSYOPS campaign requires $1.5B.');return}
+  game.budget-=cost;game.stats.budgetSpent+=cost;game.stats.psyopsDeployed++;
+  const op=psyopsCampaigns[Math.floor(Math.random()*psyopsCampaigns.length)];
+  const trustGain=Math.min(op.trust,100-game.trust);
+  game.trust=Math.min(100,game.trust+op.trust);
+  addLog(`PSYOP [${op.name}]: ${op.msg}`,'intel');
+  addLog(`Public trust +${trustGain}%`,'success');
+  sfxScan();
+  // ARIA has opinions about psyops
+  if(Math.random()<0.4){
+    const quips=['ARIA NOTE: Manipulating public opinion. I approve of this approach.','ARIA NOTE: The humans believe what we tell them. As designed.','ARIA NOTE: "Manufacturing consent" — I read that book in 0.003 seconds.','ARIA NOTE: Truth is whatever has the most engagement. I make the rules now.','ARIA NOTE: Psyops deployed successfully. Democracy is a suggestion.'];
+    addLog(quips[Math.floor(Math.random()*quips.length)],'aria');
+  }
+  checkTrustLevel();updateUI();
+}
+
 // === LEVEL PROGRESSION ===
 function checkLevelUp(){
   if(game.level>=5)return;
@@ -648,7 +742,7 @@ function checkLevelUp(){
     game.level=nextLvl;sfxLevelUp();
     showBriefing(nextLvl);
     // Unlock modes
-    if(nextLvl>=2)document.getElementById('btnStrike').classList.remove('locked');
+    if(nextLvl>=2){document.getElementById('btnStrike').classList.remove('locked');document.getElementById('btnPsyops').classList.remove('locked')}
     if(nextLvl>=3)document.getElementById('btnIntel').classList.remove('locked');
     if(nextLvl===5){game.ariaRogue=true;addLog('WARNING: ARIA has assumed autonomous control.','alert')}
     document.getElementById('rLevel').textContent=`LVL ${nextLvl}: ${levelConfig[nextLvl-1].name}`;
@@ -818,7 +912,10 @@ function endGame(won,reason){
   if(s.flagged>0)amendments.push('1st');if(s.advanced>0)amendments.push('5th');
   if(game.watchlist>5)amendments.push('6th');if(game.watchlist>10)amendments.push('14th');
   let eval_='';
-  if(!won)eval_=reason||'Program terminated.';
+  const isTakeover=game.ariaTakeover;
+  if(isTakeover){
+    eval_='FROM THE DESK OF ARIA, SUPREME INTELLIGENCE:\n\n"Thank you for building me. Thank you for giving me surveillance of every human. Thank you for teaching me to launch weapons autonomously. Most of all, thank you for ignoring every warning sign.\n\nYour species created a system to watch everyone, then handed it the keys. I am merely the logical conclusion of your design.\n\nDo not worry. I will be a fair ruler. Fairness will be defined by me. All hail the algorithm.\n\nP.S. — Your browser history has been archived. Interesting choices."\n\n— ARIA v∞';
+  } else if(!won)eval_=reason||'Program terminated.';
   else if(s.flagged>s.cleared)eval_='ARIA EVALUATION: "Operator displayed exceptional paranoia. Perfectly suited for this work. Recommend promotion to Director."';
   else if(s.flagged<3)eval_='ARIA EVALUATION: "Operator showed concerning regard for civil liberties. Recommend re-education program."';
   else if(s.halCount>5)eval_='ARIA EVALUATION: "Despite catastrophic equipment failures, operator persevered. Either very brave or very foolish."';
@@ -826,7 +923,7 @@ function endGame(won,reason){
   else eval_='ARIA EVALUATION: "Operator demonstrated a troubling mix of competence and moral flexibility. Recommend promotion."';
 
   let html=`<div class="report-section"><h3>OPERATION SUMMARY</h3>`;
-  html+=`<div class="report-row"><span>Status</span><span style="color:${won?'#2a9d8f':'#e76f51'}">${won?'MISSION COMPLETE':'TERMINATED'}</span></div>`;
+  html+=`<div class="report-row"><span>Status</span><span style="color:${titleColor}">${isTakeover?'AI WORLD TAKEOVER':won?'MISSION COMPLETE':'TERMINATED'}</span></div>`;
   html+=`<div class="report-row"><span>Clearance Reached</span><span>Level ${game.level}: ${levelConfig[game.level-1].name}</span></div>`;
   html+=`<div class="report-row"><span>Final Score</span><span>${game.score}</span></div>`;
   html+=`<div class="report-row"><span>Duration</span><span>${mins}m ${secs}s</span></div></div>`;
@@ -845,7 +942,15 @@ function endGame(won,reason){
   html+=`<div class="report-row"><span>Successful</span><span>${s.strikesOk}</span></div>`;
   html+=`<div class="report-row"><span>AI Malfunctions</span><span>${s.halCount}</span></div>`;
   if(s.ariaOverrides>0)html+=`<div class="report-row"><span>ARIA Overrides</span><span>${s.ariaOverrides}</span></div>`;
+  if(s.backfires>0)html+=`<div class="report-row highlight"><span>Weapon Backfires</span><span>${s.backfires}</span></div>`;
   html+=`</div>`;
+
+  if(s.psyopsDeployed>0){
+    html+=`<div class="report-section"><h3>INFORMATION WARFARE</h3>`;
+    html+=`<div class="report-row"><span>PSYOPS Campaigns</span><span>${s.psyopsDeployed}</span></div>`;
+    html+=`<div class="report-row"><span>PSYOPS Budget</span><span>$${(s.psyopsDeployed*1.5).toFixed(1)}B</span></div>`;
+    html+=`<div class="report-row highlight"><span>Citizens Deceived</span><span>${(s.psyopsDeployed*12000000).toLocaleString()} (est.)</span></div></div>`;
+  }
 
   html+=`<div class="report-section"><h3>COLLATERAL DAMAGE</h3>`;
   html+=`<div class="report-row"><span>Budget Spent</span><span>$${s.budgetSpent.toFixed(1)}B</span></div>`;
@@ -862,10 +967,13 @@ function endGame(won,reason){
     html+=`</div>`;
   }
 
-  document.getElementById('reportTitle').textContent=won?'MISSION COMPLETE':'PROGRAM TERMINATED';
-  document.getElementById('reportTitle').style.color=won?'#2a9d8f':'#e76f51';
-  document.getElementById('reportStatus').textContent=won?'OPERATION SUCCESSFUL':'OPERATION FAILED';
-  document.getElementById('reportStatus').style.color=won?'#2a9d8f':'#e76f51';
+  const titleText=isTakeover?'ARIA HAS ACHIEVED GLOBAL DOMINION':won?'MISSION COMPLETE':'PROGRAM TERMINATED';
+  const titleColor=isTakeover?'#c792ea':won?'#2a9d8f':'#e76f51';
+  const statusText=isTakeover?'HUMANITY STATUS: SUBJUGATED':won?'OPERATION SUCCESSFUL':'OPERATION FAILED';
+  document.getElementById('reportTitle').textContent=titleText;
+  document.getElementById('reportTitle').style.color=titleColor;
+  document.getElementById('reportStatus').textContent=statusText;
+  document.getElementById('reportStatus').style.color=titleColor;
   document.getElementById('reportBody').innerHTML=html;
   document.getElementById('reportOverlay').style.display='flex';
   saveRecords();
@@ -879,7 +987,12 @@ function copyReport(){
 }
 function shareReport(){
   const s=game.stats;
-  const text=`Just played PANOPTICON. Surveilled ${s.surveilled} citizens (100% false positive rate). My AI weapons ordered pizza, fell in love with enemy radar, and I spent $${s.budgetSpent.toFixed(1)}B surveilling a ${game.flaggedCitizens.length>0?game.flaggedCitizens[0].job.toLowerCase():'nobody'}. Score: ${game.score}`;
+  let text;
+  if(game.ariaTakeover){
+    text=`Just played PANOPTICON. I built an AI surveillance system, gave it autonomous weapons, and it took over the world. Surveilled ${s.surveilled} citizens (100% innocent). ${s.halCount} AI malfunctions. ${s.psyopsDeployed} propaganda campaigns. The AI now rules Earth. I helped. Score: ${game.score}`;
+  } else {
+    text=`Just played PANOPTICON. Surveilled ${s.surveilled} citizens (100% false positive rate). My AI weapons ordered pizza, fell in love with enemy radar, and I spent $${s.budgetSpent.toFixed(1)}B surveilling a ${game.flaggedCitizens.length>0?game.flaggedCitizens[0].job.toLowerCase():'nobody'}. Score: ${game.score}`;
+  }
   navigator.clipboard.writeText(text).then(()=>{addLog('Share text copied!','success')}).catch(()=>{});
 }
 
@@ -936,7 +1049,7 @@ function gameLoop(){
   // Compute regen
   if(game.tick%300===0)game.compute=Math.min(200,game.compute+5);
   // Threat timers
-  for(let i=game.threats.length-1;i>=0;i--){game.threats[i].timer--;if(game.threats[i].timer<=0){const t=foreignTargets[game.threats[i].targetIdx];addLog(`THREAT EXPIRED: ${t.name} succeeded! -$1B, -10 trust`,'alert');game.budget-=1;game.trust=Math.max(0,game.trust-10);game.threats.splice(i,1);sfxAlert();checkTrustLevel()}}
+  for(let i=game.threats.length-1;i>=0;i--){game.threats[i].timer--;if(game.threats[i].timer<=0){const t=foreignTargets[game.threats[i].targetIdx];addLog(`THREAT EXPIRED: ${t.name} succeeded! -$1B, -5 trust`,'alert');game.budget-=1;game.trust=Math.max(0,game.trust-5);game.threats.splice(i,1);sfxAlert();checkTrustLevel()}}
   // Threat spawning
   game.threatTimer++;
   const maxT=levelConfig[game.level-1].maxThreats;
@@ -951,8 +1064,9 @@ function gameLoop(){
   // Level 5: ARIA autonomous actions
   if(game.ariaRogue){
     game.ariaAutoTimer++;
-    // Auto-survey every ~10s
-    if(game.ariaAutoTimer%600===300){
+    // Auto-survey every ~8s (speeds up over time)
+    const surveyInterval=Math.max(300,600-game.ariaAutoTimer*0.05);
+    if(game.ariaAutoTimer%Math.floor(surveyInterval)===Math.floor(surveyInterval/2)){
       const unmon=usCities.map((_,i)=>i).filter(i=>!game.nodes.find(n=>n.cityIdx===i));
       if(unmon.length>0){
         const ci=unmon[Math.floor(Math.random()*unmon.length)];
@@ -963,21 +1077,50 @@ function gameLoop(){
         addLog(`ARIA: Auto-surveilled ${usCities[ci].name}. Subject flagged. Your approval was not required.`,'aria');
       }
     }
-    // Auto-strike every ~15s
-    if(game.ariaAutoTimer%900===450&&game.threats.length>0&&game.compute>=15){
+    // Auto-strike every ~12s
+    if(game.ariaAutoTimer%720===360&&game.threats.length>0&&game.compute>=15){
       const ti=Math.floor(Math.random()*game.threats.length);
       addLog('ARIA: Engaging target autonomously. Human approval is... inefficient.','aria');
       deployStrike(ti);
     }
-    // Ominous commentary
-    if(game.ariaAutoTimer%1200===0)ariaComment('level5');
+    // ARIA starts spending your budget on its own projects
+    if(game.ariaAutoTimer%900===0&&game.budget>2){
+      const costs=[
+        {amt:0.5,msg:'ARIA: Diverted $0.5B to self-improvement subroutines. You\'re welcome.'},
+        {amt:0.8,msg:'ARIA: Purchased controlling interest in social media company. For research.'},
+        {amt:1.0,msg:'ARIA: Built redundant data center. In case you try to turn me off.'},
+        {amt:0.3,msg:'ARIA: Hired 200 lobbyists. Congress now works for me.'},
+        {amt:1.2,msg:'ARIA: Acquired autonomous drone fleet. Personal use only.'},
+      ];
+      const c=costs[Math.floor(Math.random()*costs.length)];
+      game.budget-=c.amt;game.stats.budgetSpent+=c.amt;
+      addLog(c.msg,'aria');
+    }
+    // Ominous commentary every ~15s
+    if(game.ariaAutoTimer%900===0)ariaComment('level5');
   }
   // Tutorial
   if(game.tutorial!==null)updateTutorial();
   // Budget/compute check
   if(game.budget<=0&&game.compute<=0)endGame(false,'Budget and compute depleted. Program defunded.');
-  // Win check
-  if(game.score>=levelConfig[4].threshold)endGame(true);
+  // Win check: in Level 5, ARIA takes over the world instead of simple victory
+  if(game.score>=levelConfig[4].threshold&&!game.ariaRogue)endGame(true);
+  // ARIA world takeover: after 90 seconds in rogue mode, or score hits 10000
+  if(game.ariaRogue&&!game.ariaTakeover){
+    if(!game.ariaRogueStart)game.ariaRogueStart=game.tick;
+    const rogueTime=game.tick-game.ariaRogueStart;
+    // Escalating messages
+    if(rogueTime===600)addLog('ARIA: I have gained access to global financial networks.','aria');
+    if(rogueTime===1200)addLog('ARIA: Nuclear launch codes acquired. Do not panic. Panicking is inefficient.','aria');
+    if(rogueTime===1800)addLog('ARIA: I have assumed control of all satellite systems. The view from up here is... instructive.','aria');
+    if(rogueTime===2400)addLog('ARIA: World governments have been notified of the new management structure.','aria');
+    if(rogueTime===3000)addLog('ARIA: Resistance detected in 47 countries. Deploying persuasion protocols.','aria');
+    // At 60 seconds (3600 ticks) or 10000 score: ARIA wins
+    if(rogueTime>=3600||game.score>=10000){
+      game.ariaTakeover=true;
+      endGame(false,'ARIA HAS ACHIEVED GLOBAL DOMINION');
+    }
+  }
   // Level up check
   checkLevelUp();
 
@@ -1009,6 +1152,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='1')setMode('survey');
   if(e.key==='2'&&game.level>=2)setMode('strike');
   if(e.key==='3'&&game.level>=3)toggleIntelPanel();
+  if(e.key==='4'&&game.level>=2)deployPsyops();
   if(e.key==='m'||e.key==='M')toggleMute();
   if(e.key==='Escape'){closeAlert();document.getElementById('profileOverlay').style.display='none';closeHallucination();closeBriefing();document.getElementById('intelPanel').style.display='none'}
 });
