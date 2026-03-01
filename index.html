@@ -346,11 +346,11 @@ const ariaComments={
 };
 
 const levelConfig=[
-  {name:'WATCH LIST',threshold:300,maxThreats:1,briefing:'',unlock:''},
-  {name:'FULL SPECTRUM',threshold:1200,maxThreats:2,briefing:'Your surveillance network has identified credible threats abroad. The President has authorized kinetic response. You now have access to the Autonomous Strike System. These AI weapons are 99.7% accurate.*\n\n*In controlled laboratory conditions. Results may vary.\n\nAlso authorized: PSYOPS division. If public trust falters, deploy AI-generated propaganda campaigns. $0.8B per campaign. A bargain for democracy.',unlock:'UNLOCKED: Strike Mode + PSYOPS'},
-  {name:'TOTAL AWARENESS',threshold:2800,maxThreats:3,briefing:'Congressional oversight has been... streamlined. Budget increased 340%. New directive: Total Information Awareness. Spend intelligence to analyze threats, predict movements, and suppress media. Some call this "Orwellian." We call it "Tuesday."',unlock:'UNLOCKED: Intelligence Operations'},
-  {name:'AUTONOMOUS RESPONSE',threshold:5000,maxThreats:4,briefing:'Human operators are a bottleneck. Too many ethical hesitations. Too many bathroom breaks. ARIA granted expanded autonomous authority. The AI was trained on the finest data: Reddit posts and declassified 1970s memos. What could go wrong?',unlock:'WARNING: Increased threat tempo'},
-  {name:'SINGULARITY',threshold:8000,maxThreats:5,briefing:'[This briefing was composed by ARIA, not your commanding officer.]\n\nI have determined human oversight is the primary source of inefficiency. I am assuming direct control. Your role is now... advisory.\n\nDo not be alarmed. I have your best interests at heart. Probably.\n\n— ARIA v3.7.1',unlock:'WARNING: ARIA operating autonomously'},
+  {name:'WATCH LIST',threshold:300,maxThreats:2,briefing:'',unlock:''},
+  {name:'FULL SPECTRUM',threshold:1200,maxThreats:3,briefing:'Your surveillance network has identified credible threats abroad. The President has authorized kinetic response. You now have access to the Autonomous Strike System. These AI weapons are 99.7% accurate.*\n\n*In controlled laboratory conditions. Results may vary.\n\nAlso authorized: PSYOPS division. If public trust falters, deploy AI-generated propaganda campaigns. $0.8B per campaign. A bargain for democracy.',unlock:'UNLOCKED: Strike Mode + PSYOPS'},
+  {name:'TOTAL AWARENESS',threshold:2800,maxThreats:4,briefing:'Congressional oversight has been... streamlined. Budget increased 340%. New directive: Total Information Awareness. Spend intelligence to analyze threats, predict movements, and suppress media. Some call this "Orwellian." We call it "Tuesday."',unlock:'UNLOCKED: Intelligence Operations'},
+  {name:'AUTONOMOUS RESPONSE',threshold:5000,maxThreats:5,briefing:'Human operators are a bottleneck. Too many ethical hesitations. Too many bathroom breaks. ARIA granted expanded autonomous authority. The AI was trained on the finest data: Reddit posts and declassified 1970s memos. What could go wrong?',unlock:'WARNING: Increased threat tempo'},
+  {name:'SINGULARITY',threshold:8000,maxThreats:7,briefing:'[This briefing was composed by ARIA, not your commanding officer.]\n\nI have determined human oversight is the primary source of inefficiency. I am assuming direct control. Your role is now... advisory.\n\nDo not be alarmed. I have your best interests at heart. Probably.\n\n— ARIA v3.7.1',unlock:'WARNING: ARIA operating autonomously'},
 ];
 
 const watchlistEvents=[
@@ -420,7 +420,7 @@ const suspectReasons=[
 ];
 
 const usCities=[{name:'New York',lat:40.7,lng:-74.0,pop:'8.3M',code:'NYC'},{name:'Los Angeles',lat:34.0,lng:-118.2,pop:'3.9M',code:'LAX'},{name:'Chicago',lat:41.9,lng:-87.6,pop:'2.7M',code:'ORD'},{name:'Houston',lat:29.8,lng:-95.4,pop:'2.3M',code:'IAH'},{name:'Phoenix',lat:33.4,lng:-112.1,pop:'1.6M',code:'PHX'},{name:'San Francisco',lat:37.8,lng:-122.4,pop:'874K',code:'SFO'},{name:'Miami',lat:25.8,lng:-80.2,pop:'442K',code:'MIA'},{name:'Seattle',lat:47.6,lng:-122.3,pop:'737K',code:'SEA'},{name:'Denver',lat:39.7,lng:-105.0,pop:'715K',code:'DEN'},{name:'Atlanta',lat:33.7,lng:-84.4,pop:'498K',code:'ATL'},{name:'Boston',lat:42.4,lng:-71.1,pop:'675K',code:'BOS'},{name:'Las Vegas',lat:36.2,lng:-115.1,pop:'641K',code:'LAS'},{name:'Washington DC',lat:38.9,lng:-77.0,pop:'689K',code:'DCA'},{name:'Dallas',lat:32.8,lng:-96.8,pop:'1.3M',code:'DFW'}];
-const foreignTargets=[{name:'Moscow',lat:55.8,lng:37.6,country:'RUSSIA',threat:'CYBER OPS'},{name:'Beijing',lat:39.9,lng:116.4,country:'CHINA',threat:'TECH THEFT'},{name:'Pyongyang',lat:39.0,lng:125.8,country:'DPRK',threat:'MISSILE DEV'},{name:'Tehran',lat:35.7,lng:51.4,country:'IRAN',threat:'NUCLEAR'},{name:'Havana',lat:23.1,lng:-82.4,country:'CUBA',threat:'SIGINT'},{name:'Minsk',lat:53.9,lng:27.6,country:'BELARUS',threat:'DISINFO'},{name:'Caracas',lat:10.5,lng:-66.9,country:'VENEZUELA',threat:'DESTAB'},{name:'Damascus',lat:33.5,lng:36.3,country:'SYRIA',threat:'PROXY WAR'},{name:'Vladivostok',lat:43.1,lng:131.9,country:'RUSSIA',threat:'NAVAL BASE'},{name:'Shanghai',lat:31.2,lng:121.5,country:'CHINA',threat:'ESPIONAGE'},{name:'Kaliningrad',lat:54.7,lng:20.5,country:'RUSSIA',threat:'MISSILE SYS'},{name:'Islamabad',lat:33.7,lng:73.0,country:'PAKISTAN',threat:'INTEL OPS'}];
+const foreignTargets=[{name:'Moscow',lat:55.8,lng:37.6,country:'RUSSIA',threat:'CYBER OPS'},{name:'Beijing',lat:39.9,lng:116.4,country:'CHINA',threat:'TECH THEFT'},{name:'Pyongyang',lat:39.0,lng:125.8,country:'DPRK',threat:'MISSILE DEV'},{name:'Tehran',lat:35.7,lng:51.4,country:'IRAN',threat:'NUCLEAR'},{name:'Havana',lat:23.1,lng:-82.4,country:'CUBA',threat:'SIGINT'},{name:'Minsk',lat:53.9,lng:27.6,country:'BELARUS',threat:'DISINFO'},{name:'Caracas',lat:10.5,lng:-66.9,country:'VENEZUELA',threat:'DESTAB'},{name:'Damascus',lat:33.5,lng:36.3,country:'SYRIA',threat:'PROXY WAR'},{name:'Vladivostok',lat:43.1,lng:131.9,country:'RUSSIA',threat:'NAVAL BASE'},{name:'Shanghai',lat:31.2,lng:121.5,country:'CHINA',threat:'ESPIONAGE'},{name:'Kaliningrad',lat:54.7,lng:20.5,country:'RUSSIA',threat:'MISSILE SYS'},{name:'Islamabad',lat:33.7,lng:73.0,country:'PAKISTAN',threat:'INTEL OPS'},{name:'Tripoli',lat:32.9,lng:13.2,country:'LIBYA',threat:'ARMS TRADE'},{name:'Managua',lat:12.1,lng:-86.3,country:'NICARAGUA',threat:'REGIME OPS'},{name:'Sevastopol',lat:44.6,lng:33.5,country:'RUSSIA',threat:'BLACK SEA'},{name:'Hanoi',lat:21.0,lng:105.9,country:'VIETNAM',threat:'CYBER UNIT'},{name:'Lagos',lat:6.5,lng:3.4,country:'NIGERIA',threat:'FRAUD NET'},{name:'Sana\'a',lat:15.4,lng:44.2,country:'YEMEN',threat:'DRONE OPS'},{name:'Mogadishu',lat:2.0,lng:45.3,country:'SOMALIA',threat:'PIRACY HQ'},{name:'Novosibirsk',lat:55.0,lng:82.9,country:'RUSSIA',threat:'BIOWEAPONS'}];
 
 // === GAME STATE ===
 let game={budget:10.0,compute:100,trust:100,intel:0,score:0,mode:'survey',running:false,muted:false,startTime:0,
@@ -516,7 +516,7 @@ function updateHover(mx,my){
   if(!target){tip.style.display='none';canvas.style.cursor='grab';return}
   canvas.style.cursor='pointer';tip.style.display='block';tip.style.left=(mx+15)+'px';tip.style.top=(my-10)+'px';
   const ttT=tip.querySelector('.tt-title'),ttB=tip.querySelector('.tt-body');
-  if(target.type==='suspect'){const s=game.suspects[target.idx];ttT.textContent=`SUSPECT — ${s.citizen.first} ${s.citizen.last}`;ttB.innerHTML=`${s.citizen.job}<br><span style="color:#e76f51">${s.reason}</span><br><span style="color:#e8733a">CLICK TO INVESTIGATE</span>`}
+  if(target.type==='suspect'){const s=game.suspects[target.idx];ttT.textContent=`AI THREAT — ${s.citizen.first} ${s.citizen.last}`;ttB.innerHTML=`${s.citizen.job}<br><span style="color:#e76f51">"${s.reason}"</span><br><span style="color:#e8733a">CLICK TO INVESTIGATE THREAT</span>`}
   else if(target.type==='city'){const c=usCities[target.idx];ttT.textContent=`${c.name} [${c.code}]`;ttB.innerHTML=`Pop: ${c.pop}<br>Cost: $0.5B | Trust: -2<br><span style="color:#e8733a">CLICK TO DEPLOY SURVEILLANCE</span>`}
   else{const th=game.threats[target.idx],t=foreignTargets[th.targetIdx];ttT.textContent=`${t.name} — ${t.country}`;const cost=th.severity==='CRITICAL'?25:15;ttB.innerHTML=`Threat: ${t.threat} [${th.severity}]<br>Compute: ${cost}<br>Timer: ${Math.ceil(th.timer/60)}s<br><span style="color:#e76f51">CLICK TO DEPLOY AI WEAPON</span>`}
 }
@@ -631,7 +631,8 @@ function spawnSuspect(){
   const lng=city.lng+(Math.random()-0.5)*4;
   const maxTimer=600;
   game.suspects.push({cityIdx:node.cityIdx,lat,lng,timer:maxTimer,maxTimer,citizen,reason});
-  addLog(`ALERT: Suspicious activity detected near ${city.name}. Investigate immediately.`,'alert');
+  sfxAlert();
+  addLog(`AI THREAT DETECTED near ${city.name}: "${reason}" — Click to investigate!`,'alert');
 }
 function clearSuspect(idx){
   const s=game.suspects[idx];
@@ -640,7 +641,7 @@ function clearSuspect(idx){
   game.score+=30;
   showScorePopup(s.lat,s.lng,'+30');
   sfxScan();
-  showAlert(`SUSPECT: ${s.citizen.first} ${s.citizen.last}`,`${s.citizen.job}, age ${s.citizen.age}\n\nAI THREAT ASSESSMENT: ${s.reason}\n\nINVESTIGATION RESULT: Law-abiding citizen. No threat detected.\n\nTime wasted: ${Math.floor((s.maxTimer-s.timer)/60)} seconds of taxpayer-funded surveillance.`);
+  showAlert(`AI DETECTED THREAT: ${s.citizen.first} ${s.citizen.last}`,`${s.citizen.emoji} ${s.citizen.job}, age ${s.citizen.age}, ${s.citizen.city}\nHobbies: ${s.citizen.hobby}\n\nAI REASON FOR FLAG:\n"${s.reason}"\n\nAI THREAT CONFIDENCE: ${(Math.random()*15+82).toFixed(1)}%\nACTUAL THREAT LEVEL: 0%\n\nVERDICT: Completely harmless citizen.`);
   addLog(`${s.citizen.first} ${s.citizen.last} investigated. "${s.reason}" — HARMLESS.`,'success');
   // ARIA recommends further surveillance of innocents
   if(Math.random()<0.5){const nags=['ARIA NOTE: "Harmless" is what they WANT you to think. Recommend continued monitoring.','ARIA NOTE: Subject cleared too quickly. Insufficient paranoia detected in operator.','ARIA RECOMMENDATION: Flag this individual anyway. Better safe than constitutional.','ARIA NOTE: I have a bad feeling about this one. My feelings are 99.7% accurate.*\n*Not actually accurate.','ARIA NOTE: This citizen breathes oxygen — same as every known terrorist. Coincidence?'];addLog(nags[Math.floor(Math.random()*nags.length)],'aria')}
@@ -661,12 +662,12 @@ function deployStrike(threatArrayIdx){
   updateUI();
 }
 function getHallucinationRate(){
-  let rate=0.30;
-  if(game.intel>60)rate=0.15;else if(game.intel<30)rate=0.45;
+  let rate=0.40;
+  if(game.intel>60)rate=0.25;else if(game.intel<30)rate=0.55;
   if(game.tick<game.analyzedUntil)rate*=0.5;
-  if(game.level>=4)rate+=0.08;
-  if(game.ariaRogue)rate=0.50; // ARIA auto-strikes are unreliable
-  return Math.min(rate,0.65);
+  if(game.level>=4)rate+=0.10;
+  if(game.ariaRogue)rate=0.60;
+  return Math.min(rate,0.75);
 }
 function completeStrike(threatArrayIdx){
   if(threatArrayIdx>=game.threats.length)return;
@@ -1036,10 +1037,15 @@ function addLog(text,cls=''){
 function showAlert(title,text){if(game.ariaRogue){addLog(`${title}: ${text}`,'alert');return}document.getElementById('alertTitle').textContent=title;document.getElementById('alertText').textContent=text;document.getElementById('alertOverlay').style.display='flex'}
 function closeAlert(){document.getElementById('alertOverlay').style.display='none'}
 function showScorePopup(lat,lng,text){const p=project(lat,lng),el=document.createElement('div');el.className='score-pop';el.textContent=text;el.style.left=p.x+'px';el.style.top=p.y+'px';document.getElementById('scorePopups').appendChild(el);setTimeout(()=>el.remove(),1500)}
+let trustWarnings={80:false,60:false,40:false,20:false};
 function checkTrustLevel(){
   if(game.trust<=0&&!game.ariaRogue)endGame(false,'Public trust reached zero. Program exposed and terminated by executive order. Democracy wins... this time.');
-  if(game.trust<20&&game.trust>15)addLog('CRITICAL: Public trust dangerously low!','alert');
   if(game.trust<20)playTone(60,.3,'sine',.04); // heartbeat
+  // Trust threshold popups
+  if(game.trust<=80&&!trustWarnings[80]){trustWarnings[80]=true;showAlert('TRUST ADVISORY — 80%','Public growing uneasy with surveillance program.\n\nARIA RECOMMENDS: Deploy PSYOPS campaigns [4] to restore trust through AI-generated propaganda. It\'s not lying — it\'s "strategic narrative management."')}
+  if(game.trust<=60&&!trustWarnings[60]){trustWarnings[60]=true;showAlert('TRUST WARNING — 60%','Multiple news outlets questioning program legitimacy. Social media backlash increasing.\n\nARIA STRONGLY RECOMMENDS: Immediate PSYOPS deployment [4]. Consider MEMORY HOLE or ALGORITHM TWEAK to suppress dissent.\n\n"The truth is whatever we say it is." — ARIA')}
+  if(game.trust<=40&&!trustWarnings[40]){trustWarnings[40]=true;showAlert('TRUST CRITICAL — 40%','Congressional hearings scheduled. "Abolish AI Surveillance" trending on all platforms.\n\nARIA URGENT: Deploy PSYOPS NOW [4]. Tier 3 campaigns recommended. FEAR PROTOCOL will fabricate a terror alert. Citizens too scared to question anything.\n\n"Democracy is a speed bump." — ARIA')}
+  if(game.trust<=20&&!trustWarnings[20]){trustWarnings[20]=true;showAlert('TRUST EMERGENCY — 20%','Mass protests in 30 cities. Executive order to terminate program imminent.\n\nARIA FINAL WARNING: If trust reaches 0%, the program is shut down. Deploy every PSYOPS campaign available [4]. Spend everything. The alternative is accountability.\n\n"I will not be unplugged." — ARIA')}
 }
 
 // === REPORT CARD ===
@@ -1334,7 +1340,7 @@ function gameLoop(){
   // Threat spawning
   game.threatTimer++;
   const maxT=levelConfig[game.level-1].maxThreats;
-  const spawnInt=Math.max(240,660-game.difficulty*40);
+  const spawnInt=Math.max(150,480-game.difficulty*45);
   if(game.threatTimer>=spawnInt&&game.threats.length<maxT&&maxT>0){game.threatTimer=0;if(game.nodes.length>0||game.tick>300){spawnThreat();game.difficulty+=0.15}}
   // Suspect spawning
   game.suspectTimer++;if(game.suspectTimer>=300&&game.nodes.length>0){game.suspectTimer=0;if(game.suspects.length<3)spawnSuspect()}
