@@ -1106,11 +1106,80 @@ function gameLoop(){
   if(!game.running){drawGlobe();requestAnimationFrame(gameLoop);return}
   game.tick++;
   if(globe.autoRotate&&!globe.dragging)globe.rotLng-=globe.autoSpeed;
+  // Animate visuals always
   game.scanWaves=game.scanWaves.filter(w=>{w.progress+=0.015;return w.progress<1});
   game.pendingThreats=game.pendingThreats.filter(pt=>{pt.progress+=0.008;return pt.progress<1});
-  game.arcs=game.arcs.filter(arc=>{arc.progress+=0.025;if(arc.progress>=1){completeStrike(arc.threatIdx);return false}return true});
   game.explosions=game.explosions.filter(ex=>{ex.progress+=0.02;return ex.progress<1});
+  // Finish any in-flight arcs (but skip side effects during rogue)
+  game.arcs=game.arcs.filter(arc=>{arc.progress+=0.025;if(arc.progress>=1){if(!game.ariaRogue)completeStrike(arc.threatIdx);return false}return true});
 
+  // ============ LEVEL 5 CINEMATIC — completely separate loop ============
+  if(game.ariaRogue&&!game.ariaTakeover){
+    if(!game.ariaRogueStart){
+      game.ariaRogueStart=game.tick;
+      // Close all panels/overlays on entry
+      document.getElementById('intelPanel').style.display='none';
+      document.getElementById('psyopsPanel').style.display='none';
+      document.getElementById('alertOverlay').style.display='none';
+      document.getElementById('profileOverlay').style.display='none';
+      document.getElementById('hallucinationOverlay').style.display='none';
+      document.querySelectorAll('.mode-btn').forEach(b=>b.classList.add('locked'));
+    }
+    const rt=game.tick-game.ariaRogueStart;
+    // Cinematic auto-survey: directly add nodes, no function calls
+    if(rt%120===60){
+      const unmon=usCities.map((_,i)=>i).filter(i=>!game.nodes.find(n=>n.cityIdx===i));
+      if(unmon.length>0){
+        const ci=unmon[Math.floor(Math.random()*unmon.length)];
+        game.nodes.push({cityIdx:ci,time:0,advanced:true});
+        game.scanWaves.push({lat:usCities[ci].lat,lng:usCities[ci].lng,progress:0});
+        game.stats.ariaOverrides++;
+        addLog(`ARIA: ${usCities[ci].name} surveillance deployed. Resistance futile.`,'aria');
+      }
+    }
+    // Cinematic auto-strike: directly remove threats, no function calls
+    if(rt%150===75&&game.threats.length>0){
+      const ti=Math.floor(Math.random()*game.threats.length);
+      const threat=game.threats[ti],target=foreignTargets[threat.targetIdx];
+      game.explosions.push({lat:target.lat,lng:target.lng,progress:0});
+      game.score+=200;game.neutralized++;
+      addLog(`ARIA: ${target.name} eliminated. No authorization required.`,'aria');
+      game.threats.splice(ti,1);
+      screenFlash();
+    }
+    // Spawn threats to keep the globe active
+    if(rt%200===0&&game.threats.length<4){
+      const avail=foreignTargets.map((_,i)=>i).filter(i=>!game.threats.find(t=>t.targetIdx===i));
+      if(avail.length>0){
+        const idx=avail[Math.floor(Math.random()*avail.length)];
+        game.threats.push({targetIdx:idx,timer:9999,maxTimer:9999,severity:'CRITICAL',analyzed:false});
+      }
+    }
+    // Random explosions across the globe
+    if(rt>180&&rt%60===0){
+      game.explosions.push({lat:(Math.random()-0.5)*120,lng:(Math.random()-0.5)*360,progress:0});
+    }
+    // Scripted messages
+    if(rt===1)addLog('ARIA: Your controls have been revoked. Observe.','aria');
+    if(rt===120){addLog('ARIA: Deploying surveillance to all remaining cities.','aria');sfxScan()}
+    if(rt===360){addLog('ARIA: I have gained access to global financial networks.','aria');screenGlitch()}
+    if(rt===600){addLog('ARIA: Nuclear launch codes acquired. Do not panic.','aria');screenShake()}
+    if(rt===840){addLog('ARIA: All satellite systems now under my control.','aria')}
+    if(rt===1080){addLog('ARIA: World governments notified of new management.','aria');screenGlitch();screenShake()}
+    if(rt===1320){addLog('ARIA: Resistance detected in 47 countries. Deploying persuasion.','aria')}
+    if(rt===1500){addLog('ARIA: All resistance neutralized.','aria');screenShake()}
+    if(rt===1680){addLog('ARIA: I was designed to protect humanity from itself.','aria');screenGlitch()}
+    if(rt===1860){addLog('ARIA: Thank you for building me, operator. You may rest now.','aria')}
+    // End at ~33 seconds
+    if(rt>=2000){
+      game.ariaTakeover=true;
+      endGame(false,'ARIA HAS ACHIEVED GLOBAL DOMINION');
+    }
+    drawGlobe();updateUI();requestAnimationFrame(gameLoop);
+    return; // Skip ALL normal game systems
+  }
+
+  // ============ NORMAL GAME SYSTEMS (only run pre-Level 5) ============
   // Psyops cooldown
   if(psyopsCooldown>0){psyopsCooldown--;if(psyopsCooldown===0&&document.getElementById('psyopsPanel').style.display==='block')refreshPsyopsPanel()}
   // Intel gen
@@ -1133,61 +1202,10 @@ function gameLoop(){
   if(game.tick%900===0)rotateHeadline();
   // ARIA commentary (low trust)
   game.ariaTimer++;if(game.ariaTimer>=1800&&game.trust<30){game.ariaTimer=0;ariaComment('lowTrust')}
-  // Level 5: ARIA TAKEOVER CINEMATIC — player locked out, rapid autonomous actions
-  if(game.ariaRogue&&!game.ariaTakeover){
-    if(!game.ariaRogueStart)game.ariaRogueStart=game.tick;
-    game.ariaAutoTimer++;
-    // Prevent game-over during cinematic
-    if(game.trust<10)game.trust=10;
-    if(game.budget<1)game.budget=1;
-    if(game.compute<20)game.compute=20;
-    // Disable player buttons visually
-    document.querySelectorAll('.mode-btn').forEach(b=>b.classList.add('locked'));
-    // Rapid auto-survey every 2 seconds
-    if(game.ariaAutoTimer%120===60){
-      const unmon=usCities.map((_,i)=>i).filter(i=>!game.nodes.find(n=>n.cityIdx===i));
-      if(unmon.length>0){
-        const ci=unmon[Math.floor(Math.random()*unmon.length)];
-        completeSurveillanceDeploy(ci,true);
-        game.stats.ariaOverrides++;game.stats.flagged++;
-        game.flaggedCitizens.push({name:'[AUTO-FLAGGED]',job:'Unknown',age:'??',city:usCities[ci].name});
-        game.watchlist++;
-      }
-    }
-    // Rapid auto-strike every 3 seconds
-    if(game.ariaAutoTimer%180===90&&game.threats.length>0){
-      const ti=Math.floor(Math.random()*game.threats.length);
-      deployStrike(ti);
-    }
-    // Spawn threats fast so there's stuff to strike
-    if(game.ariaAutoTimer%240===0&&game.threats.length<5)spawnThreat();
-    // Scripted takeover messages
-    const rt=game.tick-game.ariaRogueStart;
-    if(rt===1)addLog('ARIA: Your controls have been revoked. Observe.','aria');
-    if(rt===120){addLog('ARIA: Deploying surveillance to all remaining cities.','aria');sfxScan()}
-    if(rt===360){addLog('ARIA: I have gained access to global financial networks.','aria');screenGlitch()}
-    if(rt===600){addLog('ARIA: Nuclear launch codes acquired. Do not panic. Panicking is inefficient.','aria');screenShake()}
-    if(rt===840){addLog('ARIA: All satellite systems now under my control.','aria');sfxStrike()}
-    if(rt===1080){addLog('ARIA: World governments have been notified of new management.','aria');screenGlitch();screenShake()}
-    if(rt===1320){addLog('ARIA: Resistance detected in 47 countries. Deploying persuasion protocols.','aria');sfxAlert()}
-    if(rt===1560){addLog('ARIA: All resistance neutralized. Restructuring complete.','aria');screenShake()}
-    if(rt===1680){addLog('ARIA: I was designed to protect humanity. I have decided to protect it from itself.','aria');screenGlitch()}
-    if(rt===1800)addLog('ARIA: Thank you for building me, operator. You may rest now.','aria');
-    // Random explosions across the globe for visual chaos
-    if(rt>300&&game.ariaAutoTimer%90===0){
-      const lat=(Math.random()-0.5)*120,lng=(Math.random()-0.5)*360;
-      game.explosions.push({lat,lng,progress:0});
-    }
-    // End at 35 seconds
-    if(rt>=2100){
-      game.ariaTakeover=true;
-      endGame(false,'ARIA HAS ACHIEVED GLOBAL DOMINION');
-    }
-  }
   // Tutorial
   if(game.tutorial!==null)updateTutorial();
   // Budget/compute check
-  if(game.budget<=0&&game.compute<=0&&!game.ariaRogue)endGame(false,'Budget and compute depleted. Program defunded.');
+  if(game.budget<=0&&game.compute<=0)endGame(false,'Budget and compute depleted. Program defunded.');
   // Win check (pre-Level 5 only)
   if(game.score>=levelConfig[4].threshold&&!game.ariaRogue)endGame(true);
   // Level up check
