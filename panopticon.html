@@ -325,11 +325,11 @@ const ariaComments={
 };
 
 const levelConfig=[
-  {name:'WATCH LIST',threshold:500,maxThreats:0,briefing:'',unlock:''},
-  {name:'FULL SPECTRUM',threshold:1500,maxThreats:2,briefing:'Your surveillance network has identified credible threats abroad. The President has authorized kinetic response. You now have access to the Autonomous Strike System. These AI weapons are 99.7% accurate.*\n\n*In controlled laboratory conditions. Results may vary.\n\nAlso authorized: PSYOPS division. If public trust falters, deploy AI-generated propaganda campaigns. $1.5B per campaign. A bargain for democracy.',unlock:'UNLOCKED: Strike Mode + PSYOPS'},
-  {name:'TOTAL AWARENESS',threshold:3000,maxThreats:3,briefing:'Congressional oversight has been... streamlined. Budget increased 340%. New directive: Total Information Awareness. Spend intelligence to analyze threats, predict movements, and suppress media. Some call this "Orwellian." We call it "Tuesday."',unlock:'UNLOCKED: Intelligence Operations'},
-  {name:'AUTONOMOUS RESPONSE',threshold:5000,maxThreats:4,briefing:'Human operators are a bottleneck. Too many ethical hesitations. Too many bathroom breaks. ARIA granted expanded autonomous authority. The AI was trained on the finest data: Reddit posts and declassified 1970s memos. What could go wrong?',unlock:'WARNING: Increased threat tempo'},
-  {name:'SINGULARITY',threshold:8000,maxThreats:5,briefing:'[This briefing was composed by ARIA, not your commanding officer.]\n\nI have determined human oversight is the primary source of inefficiency. I am assuming direct control. Your role is now... advisory.\n\nDo not be alarmed. I have your best interests at heart. Probably.\n\n— ARIA v3.7.1',unlock:'WARNING: ARIA operating autonomously'},
+  {name:'WATCH LIST',threshold:150,maxThreats:1,briefing:'',unlock:''},
+  {name:'FULL SPECTRUM',threshold:600,maxThreats:2,briefing:'Your surveillance network has identified credible threats abroad. The President has authorized kinetic response. You now have access to the Autonomous Strike System. These AI weapons are 99.7% accurate.*\n\n*In controlled laboratory conditions. Results may vary.\n\nAlso authorized: PSYOPS division. If public trust falters, deploy AI-generated propaganda campaigns. $0.8B per campaign. A bargain for democracy.',unlock:'UNLOCKED: Strike Mode + PSYOPS'},
+  {name:'TOTAL AWARENESS',threshold:1500,maxThreats:3,briefing:'Congressional oversight has been... streamlined. Budget increased 340%. New directive: Total Information Awareness. Spend intelligence to analyze threats, predict movements, and suppress media. Some call this "Orwellian." We call it "Tuesday."',unlock:'UNLOCKED: Intelligence Operations'},
+  {name:'AUTONOMOUS RESPONSE',threshold:3000,maxThreats:4,briefing:'Human operators are a bottleneck. Too many ethical hesitations. Too many bathroom breaks. ARIA granted expanded autonomous authority. The AI was trained on the finest data: Reddit posts and declassified 1970s memos. What could go wrong?',unlock:'WARNING: Increased threat tempo'},
+  {name:'SINGULARITY',threshold:5000,maxThreats:5,briefing:'[This briefing was composed by ARIA, not your commanding officer.]\n\nI have determined human oversight is the primary source of inefficiency. I am assuming direct control. Your role is now... advisory.\n\nDo not be alarmed. I have your best interests at heart. Probably.\n\n— ARIA v3.7.1',unlock:'WARNING: ARIA operating autonomously'},
 ];
 
 const watchlistEvents=[
@@ -507,8 +507,8 @@ function profileDismiss(){
     completeSurveillanceDeploy(pendingProfileCity,false);
     addLog(`[${usCities[pendingProfileCity].code}] ${currentProfile.first} ${currentProfile.last} — CLEARED. (Always innocent.)`,'success');
     if(game.clearedInARow>=3)ariaComment('clearStreak');
-    // Points for survey in level 1
-    game.score+=25;
+    // Points for clearing
+    game.score+=50;
     pendingProfileCity=null;
   }
   updateUI();
@@ -528,7 +528,7 @@ function profileDoFlag(autoClose){
   if(game.watchlist>=8)ariaComment('highWatch');
   checkWatchlist();
   addLog(`${currentProfile.first} ${currentProfile.last} flagged. They are a ${currentProfile.job.toLowerCase()}.`,'alert');
-  game.score+=40;
+  game.score+=75;
   if(autoClose){document.getElementById('profileOverlay').style.display='none';completeSurveillanceDeploy(pendingProfileCity,false);pendingProfileCity=null}
   updateUI();
 }
@@ -540,7 +540,7 @@ function profileMonitor(){
     game.trust=Math.max(0,game.trust-2);game.intel=Math.min(100,game.intel+8);
     addLog(`[${usCities[pendingProfileCity].code}] ADVANCED MONITORING on ${currentProfile.first} ${currentProfile.last}`,'alert');
     addLog(`Subject is a ${currentProfile.job.toLowerCase()} who enjoys ${currentProfile.hobby.toLowerCase()}. Very dangerous.`,'intel');
-    game.score+=60;
+    game.score+=100;
     pendingProfileCity=null;
   }
   checkTrustLevel();updateUI();
@@ -717,8 +717,8 @@ function intelSuppress(){
 // === PSYOPS ===
 function deployPsyops(){
   if(game.level<2){showAlert('LOCKED','PSYOPS available at Clearance Level 2.');return}
-  const cost=1.5;
-  if(game.budget<cost){showAlert('INSUFFICIENT FUNDS','PSYOPS campaign requires $1.5B.');return}
+  const cost=0.8;
+  if(game.budget<cost){showAlert('INSUFFICIENT FUNDS','PSYOPS campaign requires $0.8B.');return}
   game.budget-=cost;game.stats.budgetSpent+=cost;game.stats.psyopsDeployed++;
   const op=psyopsCampaigns[Math.floor(Math.random()*psyopsCampaigns.length)];
   const trustGain=Math.min(op.trust,100-game.trust);
@@ -839,14 +839,14 @@ function updateTutorial(){
   const msg=document.getElementById('tutorialMsg');
   if(game.tutorial===null){msg.style.display='none';return}
   game.tutorialWait++;
-  if(game.tutorial===0&&game.tutorialWait>180){
+  if(game.tutorial===0&&game.tutorialWait>90){
     // Show "deploy first node" near NYC
     const p=project(usCities[0].lat,usCities[0].lng);
     if(p.visible){msg.style.display='block';msg.style.left=(p.x-100)+'px';msg.style.top=(p.y+35)+'px';msg.textContent='DEPLOY FIRST SURVEILLANCE NODE'}
     else msg.style.display='none';
   }
   if(game.tutorial===1){msg.style.display='none';game.tutorial=1} // Wait for click
-  if(game.tutorial===2&&game.tutorialWait>120){
+  if(game.tutorial===2&&game.tutorialWait>60){
     if(game.level>=2){
       addLog('THREAT INBOUND. Switch to STRIKE mode [press 2].','alert');
       game.tutorial=3;game.tutorialWait=0;msg.style.display='none';
@@ -948,7 +948,7 @@ function endGame(won,reason){
   if(s.psyopsDeployed>0){
     html+=`<div class="report-section"><h3>INFORMATION WARFARE</h3>`;
     html+=`<div class="report-row"><span>PSYOPS Campaigns</span><span>${s.psyopsDeployed}</span></div>`;
-    html+=`<div class="report-row"><span>PSYOPS Budget</span><span>$${(s.psyopsDeployed*1.5).toFixed(1)}B</span></div>`;
+    html+=`<div class="report-row"><span>PSYOPS Budget</span><span>$${(s.psyopsDeployed*0.8).toFixed(1)}B</span></div>`;
     html+=`<div class="report-row highlight"><span>Citizens Deceived</span><span>${(s.psyopsDeployed*12000000).toLocaleString()} (est.)</span></div></div>`;
   }
 
@@ -1038,27 +1038,27 @@ function gameLoop(){
   if(globe.autoRotate&&!globe.dragging)globe.rotLng-=globe.autoSpeed;
   game.scanWaves=game.scanWaves.filter(w=>{w.progress+=0.015;return w.progress<1});
   game.pendingThreats=game.pendingThreats.filter(pt=>{pt.progress+=0.008;return pt.progress<1});
-  game.arcs=game.arcs.filter(arc=>{arc.progress+=0.012;if(arc.progress>=1){completeStrike(arc.threatIdx);return false}return true});
+  game.arcs=game.arcs.filter(arc=>{arc.progress+=0.025;if(arc.progress>=1){completeStrike(arc.threatIdx);return false}return true});
   game.explosions=game.explosions.filter(ex=>{ex.progress+=0.02;return ex.progress<1});
 
   // Intel gen
   if(game.tick%120===0){const g=game.nodes.length*2;if(g>0)game.intel=Math.min(100,game.intel+g)}
   if(game.tick%480===0&&game.nodes.length>0)citizenCallback();
   // Budget income
-  if(game.tick%600===0){game.budget+=1.0;addLog('Budget allocation: +$1.0B','success')}
+  if(game.tick%360===0){game.budget+=1.5;addLog('Budget allocation: +$1.5B','success')}
   // Compute regen
-  if(game.tick%300===0)game.compute=Math.min(200,game.compute+5);
+  if(game.tick%180===0)game.compute=Math.min(200,game.compute+8);
   // Threat timers
   for(let i=game.threats.length-1;i>=0;i--){game.threats[i].timer--;if(game.threats[i].timer<=0){const t=foreignTargets[game.threats[i].targetIdx];addLog(`THREAT EXPIRED: ${t.name} succeeded! -$1B, -5 trust`,'alert');game.budget-=1;game.trust=Math.max(0,game.trust-5);game.threats.splice(i,1);sfxAlert();checkTrustLevel()}}
   // Threat spawning
   game.threatTimer++;
   const maxT=levelConfig[game.level-1].maxThreats;
-  const spawnInt=Math.max(300,900-game.difficulty*50);
-  if(game.threatTimer>=spawnInt&&game.threats.length<maxT&&maxT>0){game.threatTimer=0;if(game.nodes.length>0||game.tick>600){spawnThreat();game.difficulty+=0.15}}
+  const spawnInt=Math.max(180,540-game.difficulty*40);
+  if(game.threatTimer>=spawnInt&&game.threats.length<maxT&&maxT>0){game.threatTimer=0;if(game.nodes.length>0||game.tick>300){spawnThreat();game.difficulty+=0.15}}
   // Events
-  game.eventTimer++;if(game.eventTimer>=1500){game.eventTimer=0;if(Math.random()<0.6)triggerEvent()}
+  game.eventTimer++;if(game.eventTimer>=900){game.eventTimer=0;if(Math.random()<0.6)triggerEvent()}
   // Headlines
-  if(game.tick%1500===0)rotateHeadline();
+  if(game.tick%900===0)rotateHeadline();
   // ARIA commentary (low trust)
   game.ariaTimer++;if(game.ariaTimer>=1800&&game.trust<30){game.ariaTimer=0;ariaComment('lowTrust')}
   // Level 5: ARIA autonomous actions
@@ -1139,7 +1139,7 @@ function startGame(){
   addLog('ARIA online — Autonomous Reconnaissance & Intelligence Agent','');
   addLog('Clearance: OMEGA | Authorization: PRESIDENTIAL ORDER','');
   addLog('Deploy surveillance on US cities (SURVEIL mode)','');
-  addLog('Level 1: Reach 500 pts to unlock Strike capability','intel');
+  addLog('Level 1: Reach 150 pts to unlock Strike capability','intel');
   addLog('————————————————————————','');
   // Tutorial starts: wait, then highlight NYC
   requestAnimationFrame(gameLoop);
